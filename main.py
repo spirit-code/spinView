@@ -79,7 +79,7 @@ class glWidget(GLCanvas):
         self.previous_mouse_position = [0,0]
 
     def drawGL(self):
-        self.view.draw()
+        self.view.draw() 
 
     def scrollEvent(self,p,rel):
         scale = 3
@@ -203,12 +203,12 @@ class MainWindow(Screen):
 
         self.performLayout()
 
-    def draw(self, ctx):
-        super(MainWindow, self).draw(ctx)
+    # def draw(self, ctx):
+        # super(MainWindow, self).draw(ctx)
+        # self.canvas.view.draw()
 
-    def drawContents(self):
-        self.canvas.view.draw()
-        super(MainWindow, self).drawContents()
+    # def drawContents(self):
+        # super(MainWindow, self).drawContents()
 
     def keyboardEvent(self, key, scancode, action, modifiers):
         print("kbEvent")
@@ -231,7 +231,7 @@ class MainWindow(Screen):
 if __name__ == '__main__':
     nanogui.init()
     win = MainWindow(800, 600)
-    win.drawAll()
+    # win.drawAll()
     win.setVisible(True)
     nanogui.mainloop()
     del win
