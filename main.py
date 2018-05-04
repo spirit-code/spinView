@@ -1,0 +1,264 @@
+#!/usr/bin/env python3
+
+import sys
+
+# Make sure to find pyVFRendering
+# This is only needed if you did not install the package
+#
+# import os
+# pyVFRenderingDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "../vfrendering_iff/build"))
+# sys.path.insert(0, pyVFRenderingDir)
+
+import nanogui
+import random
+import math
+import time
+import gc
+
+import pyVFRendering as vfr
+import numpy as np
+
+from nanogui import Color, Screen, Window, GroupLayout, BoxLayout, \
+    ToolButton, Label, Button, Widget, \
+    PopupButton, CheckBox, MessageDialog, VScrollPanel, \
+    ImagePanel, ImageView, ComboBox, ProgressBar, Slider, \
+    TextBox, ColorWheel, Graph, GridLayout, \
+    Alignment, Orientation, TabWidget, TabHeader, IntBox, GLShader, GLCanvas
+
+from nanogui import gl, glfw, entypo
+
+from threading import Timer
+
+# from ui.MainWindow import MainWindow, Backend
+# import fileparser.cmdline as cmd
+
+class glWidget(GLCanvas):
+
+    def __init__(self, parent):
+        super(glWidget, self).__init__(parent)
+        
+        self.setSize((800, 600))
+
+        # Create the VFR.geometry
+        n_cells = [20, 20, 20]
+        self.geometry = vfr.Geometry.rectilinearGeometry(
+            range(n_cells[0]), range(n_cells[1]), range(n_cells[2]))
+
+        # Initialize directions
+        directions = []
+        for iz in range(n_cells[2]):
+            for iy in range(n_cells[1]):
+                for ix in range(n_cells[0]):
+                    directions.append([0, 0, 1])
+        directions = np.array(directions)
+
+        # Create the VFR.view
+        self.view = vfr.View()
+
+        # Create/Init VFR.vf
+        self.vf = vfr.VectorField(self.geometry, directions)
+
+        # Create arrow renderer with VFR.view and VFR.vf
+        self.renderer_arrows = vfr.ArrowRenderer(self.view, self.vf)
+        
+        # Added the renderer_arrows to view renderers
+        self.renderers = [(self.renderer_arrows, [0.0, 0.0, 1.0, 1.0])]
+        self.view.renderers(self.renderers, False)
+
+        # Options
+        self.options = vfr.Options()
+        self.options.setBackgroundColor([0.5, 0.5, 0.5])
+        self.options.setColormapImplementation(
+            vfr.getColormapImplementation(vfr.Colormap.hsv))
+        self.options.setSystemCenter(
+            (self.geometry.min() + self.geometry.max())*0.5)
+        self.options.setCameraPosition([-30, 0, 0])
+        self.options.setCenterPosition(self.options.getSystemCenter())
+        self.options.setUpVector([0, 0, 1])
+        
+        # Initial draw with options
+
+        self.view.setFramebufferSize(
+            800*parent.pixelRatio(), 600*parent.pixelRatio())
+        self.view.updateOptions(self.options)
+        self.drawGL()        
+
+        self.gl_initialized = True
+       
+        # For mouse movement events
+        self.previous_mouse_position = [0,0]
+
+    def drawGL(self):
+        super(glWidget, self).drawGL()
+        self.view.draw()
+
+    def scrollEvent(self,p,rel):
+        scale = 3
+        self.view.mouseScroll(rel[1] * scale )
+        return True
+
+    def mouseDragEvent(self, p, rel, button, modifiers):
+        scale = 1 
+         
+        if button == glfw.MOUSE_BUTTON_2:
+            # Right button 
+            camera_mode = vfr.CameraMovementModes.translate
+            current_mouse_position = p
+            self.view.mouseMove(self.previous_mouse_position, p, camera_mode)
+            self.previous_mouse_position = current_mouse_position
+            return True
+        elif button == glfw.MOUSE_BUTTON_3:
+            # Left button
+            camera_mode = vfr.CameraMovementModes.rotate_bounded
+            current_mouse_position = p
+            self.view.mouseMove(self.previous_mouse_position, p, camera_mode)
+            self.previous_mouse_position = current_mouse_position
+            return True
+        return False
+
+    def mouseButtonEvent(self,p,button,down,modifiers):
+        self.previous_mouse_position = p
+        return False
+
+class MainWindow(Screen):
+    def __init__(self):
+        super(MainWindow, self).__init__((800, 600), "NanoGUI Test")
+
+        # GL canvas
+        self.canvas = glWidget(self)
+        # self.canvas.setLayout(GroupLayout()) 
+
+        # Header tabs
+        header = TabHeader(self, "sans-bold")
+        header.setSize((100, 300))
+        header.setPosition((-20, 0))
+        
+        # TODO: connect the tabs with CombBoxes(?)
+        header.addTab("File")
+        header.addTab("Edit")
+        header.addTab("Geometry")
+        header.addTab("Orientation")
+
+        # Window Alpha
+        window_a = Window(self, "alpha")
+        window_a.setFixedSize((200*self.pixelRatio(), 300*self.pixelRatio()))
+        window_a.setPosition((40, 40))
+        window_a.setLayout(GroupLayout())
+
+        buttons = window_a.buttonPanel()
+
+        # Minimize/Maximize
+        b_a_minmax = Button(buttons, "", icon=entypo.ICON_CHEVRON_DOWN)
+
+        def cb():
+            height = window_a.height()
+            if height == 30:
+                window_a.setHeight(300)
+            else:
+                window_a.setHeight(30)
+            b_a_minmax.setPushed(not b_a_minmax.pushed())
+        b_a_minmax.setCallback(cb)
+
+        # Close
+        b_a_close = Button(buttons, "", icon=entypo.ICON_CIRCLE_WITH_CROSS)
+
+        def cb():
+            window_a.dispose()
+        b_a_close.setCallback(cb)
+
+        # Buttons
+        Label(window_a, "Push buttons", "sans-bold")
+
+        b = Button(window_a, "Plain button")
+
+        def cb():
+            print("pushed!")
+        b.setCallback(cb)
+
+        b = Button(window_a, "Styled", entypo.ICON_ROCKET)
+        b.setBackgroundColor(Color(0, 0, 1.0, 0.1))
+        b.setCallback(cb)
+
+        # Window Beta
+        window_b = Window(self, "beta")
+        window_b.setFixedSize((200*self.pixelRatio(), 300*self.pixelRatio()))
+        window_b.setPosition((100, 100))
+        window_b.setLayout(GroupLayout())
+
+        buttons = window_b.buttonPanel()
+
+        # Minimize/Maximize
+        b_b_minmax = Button(buttons, "", icon=entypo.ICON_CHEVRON_DOWN)
+
+        def cb():
+            height = window_b.height()
+            if height == 30:
+                window_b.setHeight(300)
+            else:
+                window_b.setHeight(30)
+            b_b_minmax.setPushed(not b_b_minmax.pushed())
+        b_b_minmax.setCallback(cb)
+
+        # Close
+        b_b_close = Button(buttons, "", icon=entypo.ICON_CIRCLE_WITH_CROSS)
+
+        def cb():
+            window_b.dispose()
+        b_b_close.setCallback(cb)
+
+        # # Tab widget
+        # tw = TabWidget(self)
+        # tw.setPosition((-20,300))
+        # twtest = tw.createTab("tab test")
+        # tw.addTab("tab 0",twtest)
+        # tw.addTab("tab 2",twtest)
+        # tw.setFixedSize((200*self.pixelRatio(),300*self.pixelRatio()))
+
+        self.performLayout()
+
+    def draw(self, ctx):
+        super(MainWindow, self).draw(ctx)
+
+    def drawContents(self):
+        # We override MainWindow.drawContents() for automatically resizeing
+        # the OpenGL canvas
+        # self.canvas.view.updateOptions(self.canvas.options)
+        self.canvas.view.draw()
+        super(MainWindow, self).drawContents()
+
+    def keyboardEvent(self, key, scancode, action, modifiers):
+        print("kbEvent")
+        if super(MainWindow, self).keyboardEvent(key, scancode,
+                                                 action, modifiers):
+            return True
+        if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
+            self.setVisible(False)
+            return True
+        return False
+
+if __name__ == '__main__':
+    nanogui.init()
+    win = MainWindow()
+    win.drawAll()
+    win.setVisible(True)
+    nanogui.mainloop()
+    del win
+    gc.collect
+    nanogui.shutdown()
+
+    # # Set default surface format for OpenGL context
+    # fmt = QSurfaceFormat()
+    # fmt.setVersion(4, 1)
+    # fmt.setProfile(QSurfaceFormat.CoreProfile)
+    # fmt.setSamples(4)
+    # QSurfaceFormat.setDefaultFormat(fmt)
+
+    # # Open the Application Window
+    # app = QApplication(sys.argv)
+    # window = MainWindow()
+    # window.show()
+
+    # cmd.handle_args(window.glwidget)
+
+    # # Return
+    # sys.exit(app.exec_())
