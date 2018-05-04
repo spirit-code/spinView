@@ -27,17 +27,13 @@ from nanogui import Color, Screen, Window, GroupLayout, BoxLayout, \
 
 from nanogui import gl, glfw, entypo
 
-from threading import Timer
-
-# from ui.MainWindow import MainWindow, Backend
-# import fileparser.cmdline as cmd
-
 class glWidget(GLCanvas):
 
     def __init__(self, parent):
         super(glWidget, self).__init__(parent)
-        
-        self.setSize((800, 600))
+       
+        # Set the size to be equal to Screen
+        self.setSize(parent.size())
 
         # Create the VFR.geometry
         n_cells = [20, 20, 20]
@@ -54,6 +50,8 @@ class glWidget(GLCanvas):
 
         # Create the VFR.view
         self.view = vfr.View()
+        self.view.setFramebufferSize( 
+            parent.size()[0]*parent.pixelRatio(), parent.size()[1]*parent.pixelRatio())
 
         # Create/Init VFR.vf
         self.vf = vfr.VectorField(self.geometry, directions)
@@ -75,21 +73,12 @@ class glWidget(GLCanvas):
         self.options.setCameraPosition([-30, 0, 0])
         self.options.setCenterPosition(self.options.getSystemCenter())
         self.options.setUpVector([0, 0, 1])
-        
-        # Initial draw with options
-
-        self.view.setFramebufferSize(
-            800*parent.pixelRatio(), 600*parent.pixelRatio())
         self.view.updateOptions(self.options)
-        self.drawGL()        
 
-        self.gl_initialized = True
-       
         # For mouse movement events
         self.previous_mouse_position = [0,0]
 
     def drawGL(self):
-        super(glWidget, self).drawGL()
         self.view.draw()
 
     def scrollEvent(self,p,rel):
@@ -99,7 +88,6 @@ class glWidget(GLCanvas):
 
     def mouseDragEvent(self, p, rel, button, modifiers):
         scale = 1 
-         
         if button == glfw.MOUSE_BUTTON_2:
             # Right button 
             camera_mode = vfr.CameraMovementModes.translate
@@ -118,15 +106,14 @@ class glWidget(GLCanvas):
 
     def mouseButtonEvent(self,p,button,down,modifiers):
         self.previous_mouse_position = p
-        return False
+        return True
 
 class MainWindow(Screen):
-    def __init__(self):
-        super(MainWindow, self).__init__((800, 600), "NanoGUI Test")
+    def __init__(self, height, width):
+        super(MainWindow, self).__init__((height, width), "NanoGUI Test")
 
         # GL canvas
         self.canvas = glWidget(self)
-        # self.canvas.setLayout(GroupLayout()) 
 
         # Header tabs
         header = TabHeader(self, "sans-bold")
@@ -220,9 +207,6 @@ class MainWindow(Screen):
         super(MainWindow, self).draw(ctx)
 
     def drawContents(self):
-        # We override MainWindow.drawContents() for automatically resizeing
-        # the OpenGL canvas
-        # self.canvas.view.updateOptions(self.canvas.options)
         self.canvas.view.draw()
         super(MainWindow, self).drawContents()
 
@@ -235,10 +219,18 @@ class MainWindow(Screen):
             self.setVisible(False)
             return True
         return False
+    
+    def resizeEvent(self,size):
+        super(MainWindow,self).resizeEvent(size)
+        # Make sure that the GLcanvas is resized
+        self.canvas.setSize(size[:])
+        self.canvas.view.setFramebufferSize(
+            size[0]*self.pixelRatio(), size[1]*self.pixelRatio())
+        return True
 
 if __name__ == '__main__':
     nanogui.init()
-    win = MainWindow()
+    win = MainWindow(800, 600)
     win.drawAll()
     win.setVisible(True)
     nanogui.mainloop()
@@ -246,19 +238,3 @@ if __name__ == '__main__':
     gc.collect
     nanogui.shutdown()
 
-    # # Set default surface format for OpenGL context
-    # fmt = QSurfaceFormat()
-    # fmt.setVersion(4, 1)
-    # fmt.setProfile(QSurfaceFormat.CoreProfile)
-    # fmt.setSamples(4)
-    # QSurfaceFormat.setDefaultFormat(fmt)
-
-    # # Open the Application Window
-    # app = QApplication(sys.argv)
-    # window = MainWindow()
-    # window.show()
-
-    # cmd.handle_args(window.glwidget)
-
-    # # Return
-    # sys.exit(app.exec_())
