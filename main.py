@@ -31,7 +31,7 @@ class glWidget(GLCanvas):
 
     def __init__(self, parent):
         super(glWidget, self).__init__(parent)
-       
+        
         # Set the size to be equal to Screen
         self.setSize(parent.size())
 
@@ -51,7 +51,8 @@ class glWidget(GLCanvas):
         # Create the VFR.view
         self.view = vfr.View()
         self.view.setFramebufferSize( 
-            parent.size()[0]*parent.pixelRatio(), parent.size()[1]*parent.pixelRatio())
+            parent.size()[0]*parent.pixelRatio(), 
+            parent.size()[1]*parent.pixelRatio())
 
         # Create/Init VFR.vf
         self.vf = vfr.VectorField(self.geometry, directions)
@@ -77,9 +78,11 @@ class glWidget(GLCanvas):
 
         # For mouse movement events
         self.previous_mouse_position = [0,0]
-
+        
     def drawGL(self):
+        gl.Enable(gl.DEPTH_TEST)
         self.view.draw() 
+        gl.Disable(gl.DEPTH_TEST)
 
     def scrollEvent(self,p,rel):
         scale = 3
@@ -104,6 +107,11 @@ class glWidget(GLCanvas):
             return True
         return False
 
+    def setNeighborVisualization(self):
+        self.renderer_neighbors = vfr.SphereRenderer(self.view, self.vf)
+        self.renderers.append((self.renderer_neighbors,[0.0, 0.0, 1.0, 1.0]))
+        self.view.renderers(self.renderers, False)
+
     def mouseButtonEvent(self,p,button,down,modifiers):
         self.previous_mouse_position = p
         return True
@@ -113,7 +121,7 @@ class MainWindow(Screen):
         super(MainWindow, self).__init__((height, width), "NanoGUI Test")
 
         # GL canvas
-        self.canvas = glWidget(self)
+        self.gl_canvas = glWidget(self)
 
         # Header tabs
         header = TabHeader(self, "sans-bold")
@@ -128,8 +136,8 @@ class MainWindow(Screen):
 
         # Window Alpha
         window_a = Window(self, "alpha")
-        window_a.setFixedSize((200*self.pixelRatio(), 300*self.pixelRatio()))
-        window_a.setPosition((40, 40))
+        window_a.setFixedSize((200*self.pixelRatio(), 200*self.pixelRatio()))
+        window_a.setPosition((5, 30))
         window_a.setLayout(GroupLayout())
 
         buttons = window_a.buttonPanel()
@@ -155,7 +163,6 @@ class MainWindow(Screen):
 
         # Buttons
         Label(window_a, "Push buttons", "sans-bold")
-
         b = Button(window_a, "Plain button")
 
         def cb():
@@ -166,23 +173,42 @@ class MainWindow(Screen):
         b.setBackgroundColor(Color(0, 0, 1.0, 0.1))
         b.setCallback(cb)
 
-        # Window Beta
-        window_b = Window(self, "beta")
-        window_b.setFixedSize((200*self.pixelRatio(), 300*self.pixelRatio()))
-        window_b.setPosition((100, 100))
-        window_b.setLayout(GroupLayout())
+        # Window Renderers
+        window_renderers = Window(self, "Renderers")
+        window_renderers.setFixedSize((200*self.pixelRatio(), 150*self.pixelRatio()))
+        window_renderers.setPosition((5, 235))
+        window_renderers.setLayout(GroupLayout())
+       
+        def mouseDragEvent(window_renderers):
+            pass
 
-        buttons = window_b.buttonPanel()
+        def cb(state):
+            print("Not implemented!")
+        chb = CheckBox(window_renderers,"Arrows",cb) 
+        
+        def cb(state):
+            print("Not implemented!")
+        chb = CheckBox(window_renderers,"Coordinates",cb) 
+       
+        def cb(state):
+            print("Not implemented!")
+        chb = CheckBox(window_renderers,"ArrowsSphere",cb) 
+        
+        def cb(state):
+            print("Not implemented!")
+        chb = CheckBox(window_renderers,"Neighbors",cb) 
+        
+        buttons = window_renderers.buttonPanel()
 
         # Minimize/Maximize
         b_b_minmax = Button(buttons, "", icon=entypo.ICON_CHEVRON_DOWN)
 
         def cb():
-            height = window_b.height()
+            height = window_renderers.height()
             if height == 30:
-                window_b.setHeight(300)
+                window_renderers.setHeight(300)
             else:
-                window_b.setHeight(30)
+                window_renderers.setHeight(30)
             b_b_minmax.setPushed(not b_b_minmax.pushed())
         b_b_minmax.setCallback(cb)
 
@@ -190,7 +216,7 @@ class MainWindow(Screen):
         b_b_close = Button(buttons, "", icon=entypo.ICON_CIRCLE_WITH_CROSS)
 
         def cb():
-            window_b.dispose()
+            window_renderers.dispose()
         b_b_close.setCallback(cb)
 
         # # Tab widget
@@ -203,28 +229,30 @@ class MainWindow(Screen):
 
         self.performLayout()
 
-    # def draw(self, ctx):
-        # super(MainWindow, self).draw(ctx)
-        # self.canvas.view.draw()
+    def draw(self, ctx):
+        super(MainWindow, self).draw(ctx)
 
-    # def drawContents(self):
-        # super(MainWindow, self).drawContents()
+    def drawContents(self):
+        self.gl_canvas.view.draw()
+        super(MainWindow, self).drawContents()
 
     def keyboardEvent(self, key, scancode, action, modifiers):
-        print("kbEvent")
         if super(MainWindow, self).keyboardEvent(key, scancode,
                                                  action, modifiers):
             return True
         if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
             self.setVisible(False)
             return True
+        if key == glfw.KEY_S:
+            self.gl_canvas.setNeighborVisualization()
+            return True
         return False
     
     def resizeEvent(self,size):
         super(MainWindow,self).resizeEvent(size)
         # Make sure that the GLcanvas is resized
-        self.canvas.setSize(size[:])
-        self.canvas.view.setFramebufferSize(
+        self.gl_canvas.setSize(size[:])
+        self.gl_canvas.view.setFramebufferSize(
             size[0]*self.pixelRatio(), size[1]*self.pixelRatio())
         return True
 
@@ -233,7 +261,7 @@ if __name__ == '__main__':
     win = MainWindow(800, 600)
     # win.drawAll()
     win.setVisible(True)
-    nanogui.mainloop()
+    nanogui.mainloop(refresh=1000)
     del win
     gc.collect
     nanogui.shutdown()
