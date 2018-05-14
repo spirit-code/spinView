@@ -27,16 +27,22 @@ from nanogui import Color, Screen, Window, GroupLayout, BoxLayout, \
 
 from nanogui import gl, glfw, entypo
 
+
 class glWidget(GLCanvas):
 
     def __init__(self, parent):
         super(glWidget, self).__init__(parent)
-        
+
         # Set the size to be equal to Screen
         self.setSize(parent.size())
 
+        self.system_dimensions = np.array([3, 5, 4])
+        self.nx = self.system_dimensions[0]
+        self.ny = self.system_dimensions[1]
+        self.nz = self.system_dimensions[2]
+
         # Create the VFR.geometry
-        n_cells = [20, 20, 20]
+        n_cells = self.system_dimensions
         self.geometry = vfr.Geometry.rectilinearGeometry(
             range(n_cells[0]), range(n_cells[1]), range(n_cells[2]))
 
@@ -45,24 +51,28 @@ class glWidget(GLCanvas):
         for iz in range(n_cells[2]):
             for iy in range(n_cells[1]):
                 for ix in range(n_cells[0]):
-                    directions.append([0, 0, 1])
-        directions = np.array(directions)
+                    directions.append([0, 0, 0.6])
+        self.directions = np.array(directions)
 
         # Create the VFR.view
         self.view = vfr.View()
-        self.view.setFramebufferSize( 
-            parent.size()[0]*parent.pixelRatio(), 
+        self.view.setFramebufferSize(
+            parent.size()[0]*parent.pixelRatio(),
             parent.size()[1]*parent.pixelRatio())
 
         # Create/Init VFR.vf
         self.vf = vfr.VectorField(self.geometry, directions)
 
-        # Create arrow renderer with VFR.view and VFR.vf
-        self.renderer_arrows = vfr.ArrowRenderer(self.view, self.vf)
-        
-        # Added the renderer_arrows to view renderers
-        self.renderers = [(self.renderer_arrows, [0.0, 0.0, 1.0, 1.0])]
-        self.view.renderers(self.renderers, False)
+        # Renderers
+        self.show_arrows = False
+        self.show_neighbors = False
+        self.show_coordinate_system = False
+
+        # Switch On initial renderers
+        self.switchArrowsRenderer()
+        self.switchCoordinateSystemRenderer()
+
+        self._setupRenderers()
 
         # Options
         self.options = vfr.Options()
@@ -77,22 +87,116 @@ class glWidget(GLCanvas):
         self.view.updateOptions(self.options)
 
         # For mouse movement events
-        self.previous_mouse_position = [0,0]
-        
+        self.previous_mouse_position = [0, 0]
+
+    def switchNeighborRenderer(self, index):
+        self.drawNeighbors(index)
+        self.show_neighbors = not self.show_neighbors
+        self._setupRenderers()
+
+    def drawNeighbors(self, index):
+        scale = 0.8
+        cyan_sph = np.array([-1, -1, 0.7])/np.linalg.norm([-1, -1, 0.7])
+        pink_sph = np.array([0, 1, 0.7])/np.linalg.norm([0, 1, 0.7])
+
+        # check index
+        nos = self.nx*self.ny*self.nz
+        if index >= nos:
+            print("Error: Invalid indeces in Neighbor Renderer")
+            return
+
+        # turn single index into 3D indeces i,j,k
+        i = index % self.nx
+        j = ((index-i)//self.nx) % self.ny
+        k = (((index-i)//self.nx) - j) // self.ny
+
+        # create a new direction array that represents the neighbor spheres
+        directions = [[0, 0, 0] for x in range(nos)]
+
+        # set the sphere for the spin tha we are looking at
+        index = k*self.nx*self.ny + j*self.nx + i
+        directions[index] = cyan_sph
+
+        # set the neighbors
+        x_plus = index + 1
+        if x_plus < nos and x_plus >= 0 and not i == (self.nx-1):
+            directions[x_plus] = pink_sph
+
+        x_minus = index - 1
+        if x_minus < nos and x_minus >= 0 and not i == 0:
+            directions[x_minus] = pink_sph
+
+        y_plus = index + self.nx
+        if y_plus < nos and y_plus >= 0 and not j == (self.ny-1):
+            directions[y_plus] = pink_sph
+
+        y_minus = index - self.nx
+        if y_minus < nos and y_minus >= 0 and not j == 0:
+            directions[y_minus] = pink_sph
+
+        z_plus = index + self.nx * self.ny
+        if z_plus < nos and z_plus >= 0 and not k == (self.nz-1):
+            directions[z_plus] = pink_sph
+
+        z_minus = index - self.nx * self.ny
+        if z_minus < nos and z_minus >= 0 and not k == 0:
+            directions[z_minus] = pink_sph
+
+        # scale and add the sphere renderer
+        directions = np.array(directions)*scale
+        self.neighbors_vf = vfr.VectorField(self.geometry, directions)
+        self.renderer_neighbors = vfr.SphereRenderer(
+            self.view, self.neighbors_vf)
+
+        self._setupRenderers()
+
+    def switchCoordinateSystemRenderer(self):
+        self.position_coordinate_system = [
+            0.9, 0, 0.1, 0.1]  # turn it into dynamic
+        self.renderer_cs = vfr.CoordinateSystemRenderer(self.view)
+        self.renderer_cs.setAxisLength([1, 1, 1])
+        self.renderer_cs.setNormalize(True)
+
+        self.show_coordinate_system = not self.show_coordinate_system
+        self._setupRenderers()
+
+    def switchArrowsRenderer(self):
+        # Create arrow renderer with VFR.view and VFR.vf
+        self.renderer_arrows = vfr.ArrowRenderer(self.view, self.vf)
+        self.show_arrows = not self.show_arrows
+        self._setupRenderers()
+
+    def _setupRenderers(self):
+        self.renderers_list = []
+        if self.show_arrows:
+            self.renderers_list.append(self.renderer_arrows)
+        if self.show_neighbors:
+            self.renderers_list.append(self.renderer_neighbors)
+        # combine renderers
+        renderers_system = vfr.CombinedRenderer(
+            self.view, self.renderers_list)
+        renderers = [(renderers_system, [0.0, 0.0, 1.0, 1.0])]
+        # add the coordinate system
+        if self.show_coordinate_system:
+            renderers.append(
+                (self.renderer_cs, self.position_coordinate_system))
+        # show renderers
+        self.view.renderers(renderers, False)
+
     def drawGL(self):
         gl.Enable(gl.DEPTH_TEST)
-        self.view.draw() 
+        self.view.draw()
         gl.Disable(gl.DEPTH_TEST)
 
-    def scrollEvent(self,p,rel):
+    def scrollEvent(self, p, rel):
         scale = 3
-        self.view.mouseScroll(rel[1] * scale )
+        self.view.mouseScroll(rel[1] * scale)
         return True
 
     def mouseDragEvent(self, p, rel, button, modifiers):
-        scale = 1 
+        scale = 1
         if button == glfw.MOUSE_BUTTON_2:
-            # Right button 
+            # Right button
             camera_mode = vfr.CameraMovementModes.translate
             current_mouse_position = p
             self.view.mouseMove(self.previous_mouse_position, p, camera_mode)
@@ -107,14 +211,10 @@ class glWidget(GLCanvas):
             return True
         return False
 
-    def setNeighborVisualization(self):
-        self.renderer_neighbors = vfr.SphereRenderer(self.view, self.vf)
-        self.renderers.append((self.renderer_neighbors,[0.0, 0.0, 1.0, 1.0]))
-        self.view.renderers(self.renderers, False)
-
-    def mouseButtonEvent(self,p,button,down,modifiers):
+    def mouseButtonEvent(self, p, button, down, modifiers):
         self.previous_mouse_position = p
         return True
+
 
 class MainWindow(Screen):
     def __init__(self, height, width):
@@ -127,97 +227,15 @@ class MainWindow(Screen):
         header = TabHeader(self, "sans-bold")
         header.setSize((100, 300))
         header.setPosition((-20, 0))
-        
+
         # TODO: connect the tabs with CombBoxes(?)
         header.addTab("File")
         header.addTab("Edit")
         header.addTab("Geometry")
         header.addTab("Orientation")
 
-        # Window Alpha
-        window_a = Window(self, "alpha")
-        window_a.setFixedSize((200*self.pixelRatio(), 200*self.pixelRatio()))
-        window_a.setPosition((5, 30))
-        window_a.setLayout(GroupLayout())
-
-        buttons = window_a.buttonPanel()
-
-        # Minimize/Maximize
-        b_a_minmax = Button(buttons, "", icon=entypo.ICON_CHEVRON_DOWN)
-
-        def cb():
-            height = window_a.height()
-            if height == 30:
-                window_a.setHeight(300)
-            else:
-                window_a.setHeight(30)
-            b_a_minmax.setPushed(not b_a_minmax.pushed())
-        b_a_minmax.setCallback(cb)
-
-        # Close
-        b_a_close = Button(buttons, "", icon=entypo.ICON_CIRCLE_WITH_CROSS)
-
-        def cb():
-            window_a.dispose()
-        b_a_close.setCallback(cb)
-
-        # Buttons
-        Label(window_a, "Push buttons", "sans-bold")
-        b = Button(window_a, "Plain button")
-
-        def cb():
-            print("pushed!")
-        b.setCallback(cb)
-
-        b = Button(window_a, "Styled", entypo.ICON_ROCKET)
-        b.setBackgroundColor(Color(0, 0, 1.0, 0.1))
-        b.setCallback(cb)
-
-        # Window Renderers
-        window_renderers = Window(self, "Renderers")
-        window_renderers.setFixedSize((200*self.pixelRatio(), 150*self.pixelRatio()))
-        window_renderers.setPosition((5, 235))
-        window_renderers.setLayout(GroupLayout())
-       
-        def mouseDragEvent(window_renderers):
-            pass
-
-        def cb(state):
-            print("Not implemented!")
-        chb = CheckBox(window_renderers,"Arrows",cb) 
-        
-        def cb(state):
-            print("Not implemented!")
-        chb = CheckBox(window_renderers,"Coordinates",cb) 
-       
-        def cb(state):
-            print("Not implemented!")
-        chb = CheckBox(window_renderers,"ArrowsSphere",cb) 
-        
-        def cb(state):
-            print("Not implemented!")
-        chb = CheckBox(window_renderers,"Neighbors",cb) 
-        
-        buttons = window_renderers.buttonPanel()
-
-        # Minimize/Maximize
-        b_b_minmax = Button(buttons, "", icon=entypo.ICON_CHEVRON_DOWN)
-
-        def cb():
-            height = window_renderers.height()
-            if height == 30:
-                window_renderers.setHeight(300)
-            else:
-                window_renderers.setHeight(30)
-            b_b_minmax.setPushed(not b_b_minmax.pushed())
-        b_b_minmax.setCallback(cb)
-
-        # Close
-        b_b_close = Button(buttons, "", icon=entypo.ICON_CIRCLE_WITH_CROSS)
-
-        def cb():
-            window_renderers.dispose()
-        b_b_close.setCallback(cb)
+        self.windowFoo()
+        self.windowRenderers()
 
         # # Tab widget
         # tw = TabWidget(self)
@@ -229,12 +247,120 @@ class MainWindow(Screen):
 
         self.performLayout()
 
+    def windowFoo(self):
+        height = 200
+        height_min = 30
+        width = 200
+        window = Window(self, "alpha")
+        window.setFixedSize(
+            (width*self.pixelRatio(), height*self.pixelRatio()))
+        window.setPosition((5, 30))
+        window.setLayout(GroupLayout())
+
+        buttons = window.buttonPanel()
+
+        # Minimize/Maximize
+        b_minmax = Button(buttons, "", icon=entypo.ICON_CHEVRON_DOWN)
+
+        def cb():
+            if window.height() == height_min:
+                window.setHeight(height)
+            else:
+                window.setHeight(height_min)
+            b_minmax.setPushed(not b_minmax.pushed())
+        b_minmax.setCallback(cb)
+
+        # Close
+        b_close = Button(buttons, "", icon=entypo.ICON_CIRCLE_WITH_CROSS)
+
+        def cb():
+            window.dispose()
+        b_close.setCallback(cb)
+
+        # Buttons
+        Label(window, "Push buttons", "sans-bold")
+        b = Button(window, "Plain button")
+
+        def cb():
+            print("pushed!")
+        b.setCallback(cb)
+
+        b = Button(window, "Styled", entypo.ICON_ROCKET)
+        b.setBackgroundColor(Color(0, 0, 1.0, 0.1))
+        b.setCallback(cb)
+
+    def windowRenderers(self):
+        height = 200
+        height_min = 30
+        width = 200
+        window = Window(self, "Renderers")
+        window.setFixedSize(
+            (width*self.pixelRatio(), height*self.pixelRatio()))
+        window.setPosition((5, 235))
+        window.setLayout(GroupLayout())
+
+        def mouseDragEvent(window):
+            pass
+
+        def cb(state):
+            self.gl_canvas.switchArrowsRenderer()
+        chb = CheckBox(window, "Arrows", cb)
+        chb.setChecked(True)
+
+        def cb(state):
+            self.gl_canvas.switchCoordinateSystemRenderer()
+        chb = CheckBox(window, "Coordinates", cb)
+        chb.setChecked(True)
+
+        def cb(state):
+            print("Not implemented!")
+        chb = CheckBox(window, "ArrowsSphere", cb)
+
+        def update_cb(state):
+            self.gl_canvas.drawNeighbors(intBox.value()-1)
+
+        def switch_cb(state):
+            self.gl_canvas.switchNeighborRenderer(intBox.value()-1)
+        chb = CheckBox(window, "Neighbors", switch_cb)
+        intBox = IntBox(window)
+        intBox.setEditable(True)
+        intBox.setFixedSize((150, 20))
+        intBox.setUnits("spin index")
+        intBox.setValue(1)
+        intBox.setDefaultValue("1")
+        intBox.setFontSize(16)
+        intBox.setFormat("[1-9][0-9]*")
+        intBox.setSpinnable(True)
+        intBox.setMinValue(1)
+        intBox.setValueIncrement(1)
+        intBox.setCallback(update_cb)
+
+        buttons = window.buttonPanel()
+
+        # Minimize/Maximize
+        b_minmax = Button(buttons, "", icon=entypo.ICON_CHEVRON_DOWN)
+
+        def cb():
+            if window.height() == height_min:
+                window.setHeight(height)
+            else:
+                window.setHeight(height_min)
+            b_minmax.setPushed(not b_minmax.pushed())
+        b_minmax.setCallback(cb)
+
+        # Close
+        b_close = Button(buttons, "", icon=entypo.ICON_CIRCLE_WITH_CROSS)
+
+        def cb():
+            window.dispose()
+        b_close.setCallback(cb)
+
     def draw(self, ctx):
         super(MainWindow, self).draw(ctx)
 
     def drawContents(self):
-        self.gl_canvas.view.draw()
         super(MainWindow, self).drawContents()
+        self.gl_canvas.view.draw()
 
     def keyboardEvent(self, key, scancode, action, modifiers):
         if super(MainWindow, self).keyboardEvent(key, scancode,
@@ -243,18 +369,16 @@ class MainWindow(Screen):
         if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
             self.setVisible(False)
             return True
-        if key == glfw.KEY_S:
-            self.gl_canvas.setNeighborVisualization()
-            return True
         return False
-    
-    def resizeEvent(self,size):
-        super(MainWindow,self).resizeEvent(size)
+
+    def resizeEvent(self, size):
+        super(MainWindow, self).resizeEvent(size)
         # Make sure that the GLcanvas is resized
         self.gl_canvas.setSize(size[:])
         self.gl_canvas.view.setFramebufferSize(
             size[0]*self.pixelRatio(), size[1]*self.pixelRatio())
         return True
+
 
 if __name__ == '__main__':
     nanogui.init()
@@ -265,4 +389,3 @@ if __name__ == '__main__':
     del win
     gc.collect
     nanogui.shutdown()
-
