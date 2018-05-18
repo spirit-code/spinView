@@ -42,6 +42,8 @@ class GLWidget(GLCanvas):
         self.show_arrows = False
         self.show_neighbors = False
         self.show_coordinate_system = False
+        self.show_bounding_box = False
+        self.show_boxes = False 
 
         # Switch On initial renderers
         self.switchArrowsRenderer()
@@ -140,6 +142,18 @@ class GLWidget(GLCanvas):
         self.renderer_arrows = vfr.ArrowRenderer(self.view, self.vf)
         self.show_arrows = not self.show_arrows
         self._setupRenderers()
+    
+    def switchBoundingBoxRenderer(self):
+        self.renderer_bounding_box = vfr.BoundingBoxRenderer.forCuboid(self.view, 
+                (self.geometry.min() + self.geometry.max())*0.5, 
+                [self.nx, self.ny, self.nz], [0, 0, 0], 1)
+        self.show_bounding_box = not self.show_bounding_box
+        self._setupRenderers()
+
+    def switchBoxesRenderer(self):
+        # TODO: connect with the vfr.BoxRenderer when implemented 
+        self.show_boxes = not self.show_boxes
+        self._setupRenderers()
 
     def _setupRenderers(self):
         self.renderers_list = []
@@ -147,6 +161,8 @@ class GLWidget(GLCanvas):
             self.renderers_list.append(self.renderer_arrows)
         if self.show_neighbors:
             self.renderers_list.append(self.renderer_neighbors)
+        if self.show_bounding_box:
+            self.renderers_list.append(self.renderer_bounding_box)
         # combine renderers
         renderers_system = vfr.CombinedRenderer(
             self.view, self.renderers_list)

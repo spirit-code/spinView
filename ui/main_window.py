@@ -83,7 +83,7 @@ class MainWindow(Screen):
         b.setCallback(cb)
 
     def windowRenderers(self):
-        height = 200
+        height = 300
         height_min = 30
         width = 200
         window = Window(self, "Renderers")
@@ -108,6 +108,16 @@ class MainWindow(Screen):
         def cb(state):
             print("Not implemented!")
         chb = CheckBox(window, "ArrowsSphere", cb)
+        
+        def cb(state):
+            self.gl_canvas.switchBoundingBoxRenderer()
+        chb = CheckBox(window, "Bounding Box", cb)
+        chb.setChecked(self.gl_canvas.show_bounding_box)
+        
+        def cb(state):
+            print("Not implemented!")
+        chb = CheckBox(window, "Boxes", cb)
+        chb.setChecked(self.gl_canvas.show_boxes)
 
         def update_cb(state):
             self.gl_canvas.drawNeighbors(intBox.value()-1)
