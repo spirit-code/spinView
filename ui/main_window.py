@@ -98,26 +98,20 @@ class MainWindow(Screen):
         def cb(state):
             self.gl_canvas.switchArrowsRenderer()
         chb = CheckBox(window, "Arrows", cb)
-        chb.setChecked(True)
+        chb.setChecked(self.gl_canvas.show_arrows)
 
         def cb(state):
             self.gl_canvas.switchCoordinateSystemRenderer()
         chb = CheckBox(window, "Coordinates", cb)
-        chb.setChecked(True)
+        chb.setChecked(self.gl_canvas.show_coordinate_system)
 
         def cb(state):
             print("Not implemented!")
         chb = CheckBox(window, "ArrowsSphere", cb)
         
         def cb(state):
-            self.gl_canvas.switchBoundingBoxRenderer()
-        chb = CheckBox(window, "Bounding Box", cb)
-        chb.setChecked(self.gl_canvas.show_bounding_box)
-        
-        def cb(state):
-            print("Not implemented!")
-        chb = CheckBox(window, "Boxes", cb)
-        chb.setChecked(self.gl_canvas.show_boxes)
+            self.gl_canvas.switchCubesRenderer()
+        chb = CheckBox(window, "Cubes", cb)
 
         def update_cb(state):
             self.gl_canvas.drawNeighbors(intBox.value()-1)
@@ -137,6 +131,11 @@ class MainWindow(Screen):
         intBox.setMinValue(1)
         intBox.setValueIncrement(1)
         intBox.setCallback(update_cb)
+        
+        def cb(state):
+            self.gl_canvas.switchBoundingBoxRenderer()
+        chb = CheckBox(window, "Bounding Box", cb)
+        chb.setChecked(self.gl_canvas.show_bounding_box)
 
         buttons = window.buttonPanel()
 

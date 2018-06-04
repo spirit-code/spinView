@@ -42,10 +42,10 @@ class GLWidget(GLCanvas):
         self.show_arrows = False
         self.show_neighbors = False
         self.show_coordinate_system = False
+        self.show_cubes = False 
         self.show_bounding_box = False
-        self.show_boxes = False 
 
-        # Switch On initial renderers
+        # Switch on initial renderers
         self.switchArrowsRenderer()
         self.switchCoordinateSystemRenderer()
 
@@ -138,21 +138,20 @@ class GLWidget(GLCanvas):
         self._setupRenderers()
 
     def switchArrowsRenderer(self):
-        # Create arrow renderer with VFR.view and VFR.vf
         self.renderer_arrows = vfr.ArrowRenderer(self.view, self.vf)
         self.show_arrows = not self.show_arrows
         self._setupRenderers()
-    
+
     def switchBoundingBoxRenderer(self):
         self.renderer_bounding_box = vfr.BoundingBoxRenderer.forCuboid(self.view, 
                 (self.geometry.min() + self.geometry.max())*0.5, 
                 [self.nx, self.ny, self.nz], [0, 0, 0], 1)
         self.show_bounding_box = not self.show_bounding_box
         self._setupRenderers()
-
-    def switchBoxesRenderer(self):
-        # TODO: connect with the vfr.BoxRenderer when implemented 
-        self.show_boxes = not self.show_boxes
+    
+    def switchCubesRenderer(self):
+        self.renderer_cubes = vfr.ParallelepipedRenderer(self.view, self.vf)
+        self.show_cubes = not self.show_cubes
         self._setupRenderers()
 
     def _setupRenderers(self):
@@ -163,11 +162,13 @@ class GLWidget(GLCanvas):
             self.renderers_list.append(self.renderer_neighbors)
         if self.show_bounding_box:
             self.renderers_list.append(self.renderer_bounding_box)
+        if self.show_cubes:
+            self.renderers_list.append(self.renderer_cubes)
         # combine renderers
         renderers_system = vfr.CombinedRenderer(
             self.view, self.renderers_list)
         renderers = [(renderers_system, [0.0, 0.0, 1.0, 1.0])]
-        # add the coordinate system
+        # last add the coordinate system renderer
         if self.show_coordinate_system:
             renderers.append(
                 (self.renderer_cs, self.position_coordinate_system))
