@@ -83,7 +83,7 @@ class MainWindow(Screen):
         b.setCallback(cb)
 
     def windowRenderers(self):
-        height = 300
+        height = 150
         height_min = 30
         width = 200
         window = Window(self, "Renderers")
@@ -95,31 +95,38 @@ class MainWindow(Screen):
         def mouseDragEvent(window):
             pass
 
+        popupBtnMiscRenderers = PopupButton(window, "Misc")
+        popupBtnMiscRenderers.setFontSize(16)
+
+        popupMiscRenderers = popupBtnMiscRenderers.popup()
+        popupMiscRenderers.setLayout(GroupLayout())
+        Label(popupMiscRenderers, "Miscaleneous Renderers")
         def cb(state):
             self.gl_canvas.switchArrowsRenderer()
-        chb = CheckBox(window, "Arrows", cb)
+        chb = CheckBox(popupMiscRenderers, "Arrows", cb)
         chb.setChecked(self.gl_canvas.show_arrows)
-
         def cb(state):
             self.gl_canvas.switchCoordinateSystemRenderer()
-        chb = CheckBox(window, "Coordinates", cb)
+        chb = CheckBox(popupMiscRenderers, "Coordinates", cb)
         chb.setChecked(self.gl_canvas.show_coordinate_system)
-
         def cb(state):
             print("Not implemented!")
-        chb = CheckBox(window, "ArrowsSphere", cb)
-        
+        chb = CheckBox(popupMiscRenderers, "ArrowsSphere", cb)
         def cb(state):
-            self.gl_canvas.switchCubesRenderer()
-        chb = CheckBox(window, "Cubes", cb)
-
-        def update_cb(state):
-            self.gl_canvas.drawNeighbors(intBox.value()-1)
-
+            self.gl_canvas.switchBoundingBoxRenderer()
+        chb = CheckBox(popupMiscRenderers, "Bounding Box", cb)
+        chb.setChecked(self.gl_canvas.show_bounding_box)
+      
+        popupBtnNeighborsRenderer = PopupButton(window, "Neighbors")
+        popupBtnNeighborsRenderer.setFontSize(16)
+        
+        popupNeighborsRenderer = popupBtnNeighborsRenderer.popup()
+        popupNeighborsRenderer.setLayout(GroupLayout())
+        Label(popupNeighborsRenderer, "Neighbors Renderer Options")
         def switch_cb(state):
             self.gl_canvas.switchNeighborRenderer(intBox.value()-1)
-        chb = CheckBox(window, "Neighbors", switch_cb)
-        intBox = IntBox(window)
+        chb = CheckBox(popupNeighborsRenderer, "Neighbors", switch_cb)
+        intBox = IntBox(popupNeighborsRenderer)
         intBox.setEditable(True)
         intBox.setFixedSize((150, 20))
         intBox.setUnits("spin index")
@@ -130,12 +137,26 @@ class MainWindow(Screen):
         intBox.setSpinnable(True)
         intBox.setMinValue(1)
         intBox.setValueIncrement(1)
+        def update_cb(state):
+            self.gl_canvas.drawNeighbors(intBox.value()-1)
         intBox.setCallback(update_cb)
+         
+        popupBtnCubesRenderer = PopupButton(window, "Cubes")
+        popupBtnCubesRenderer.setFontSize(16) 
         
+        popupCubesRenderer = popupBtnCubesRenderer.popup()
+        popupCubesRenderer.setLayout(GroupLayout())
+        Label(popupCubesRenderer, "Cubes Renderer Options")
         def cb(state):
-            self.gl_canvas.switchBoundingBoxRenderer()
-        chb = CheckBox(window, "Bounding Box", cb)
-        chb.setChecked(self.gl_canvas.show_bounding_box)
+            self.gl_canvas.switchCubesRenderer()
+            self.gl_canvas.setCubesSize(slider.value())
+        chb = CheckBox(popupCubesRenderer, "Cubes", cb)
+        def cb(state):
+            self.gl_canvas.setCubesSize(slider.value())
+        slider = Slider(popupCubesRenderer)
+        slider.setValue(0.5)
+        slider.setFixedWidth(80)
+        slider.setCallback(cb)
 
         buttons = window.buttonPanel()
 

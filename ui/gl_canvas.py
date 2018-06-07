@@ -26,7 +26,7 @@ class GLWidget(GLCanvas):
         for iz in range(n_cells[2]):
             for iy in range(n_cells[1]):
                 for ix in range(n_cells[0]):
-                    directions.append([0, 0, 0.6])
+                    directions.append([0, 0, 0.5])
         self.directions = np.array(directions)
 
         # Create the VFR.view
@@ -153,6 +153,13 @@ class GLWidget(GLCanvas):
         self.renderer_cubes = vfr.ParallelepipedRenderer(self.view, self.vf)
         self.show_cubes = not self.show_cubes
         self._setupRenderers()
+
+    def setCubesSize(self,scale):
+        if self.show_cubes:
+            self.renderer_cubes.setParallelepipedLengthX(scale)
+            self.renderer_cubes.setParallelepipedLengthY(scale)
+            self.renderer_cubes.setParallelepipedLengthZ(scale)
+            self._setupRenderers()
 
     def _setupRenderers(self):
         self.renderers_list = []
