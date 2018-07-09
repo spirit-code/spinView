@@ -28,6 +28,8 @@ class GLWidget(GLCanvas):
                 for ix in range(n_cells[0]):
                     directions.append([0, 0, 0.5])
         self.directions = np.array(directions)
+        
+        directions[0] = np.array([0,-0.5,0]) 
 
         # Create the VFR.view
         self.view = vfr.View()
@@ -40,11 +42,12 @@ class GLWidget(GLCanvas):
 
         # Renderers
         self.show_arrows = False
+        self.show_dots = False
         self.show_neighbors = False
         self.show_coordinate_system = False
         self.show_cubes = False 
         self.show_bounding_box = False
-
+        
         # Switch on initial renderers
         self.switchArrowsRenderer()
         self.switchCoordinateSystemRenderer()
@@ -65,6 +68,7 @@ class GLWidget(GLCanvas):
 
         # For mouse movement events
         self.previous_mouse_position = [0, 0]
+
 
     def switchNeighborRenderer(self, index):
         self.drawNeighbors(index)
@@ -137,6 +141,24 @@ class GLWidget(GLCanvas):
         self.show_coordinate_system = not self.show_coordinate_system
         self._setupRenderers()
 
+    def switchDotRenderer(self, index):
+        self.renderer_dots = vfr.DotRenderer(self.view, self.vf)
+        self.show_dots = not self.show_dots
+        self.renderer_dots.setDotStyle(index) 
+        self._setupRenderers()
+
+    def setDotRadius(self,size):
+        if self.show_dots:
+            self.renderer_dots.setDotRadius(size)
+            self._setupRenderers()
+    
+    def getDotStyles(self):
+        return [e for e in vfr.DotRendererStyle.__members__]
+
+    def setDotStyle(self, index):
+        if self.show_dots: 
+            self.renderer_dots.setDotStyle(index) 
+
     def switchArrowsRenderer(self):
         self.renderer_arrows = vfr.ArrowRenderer(self.view, self.vf)
         self.show_arrows = not self.show_arrows
@@ -165,6 +187,8 @@ class GLWidget(GLCanvas):
         self.renderers_list = []
         if self.show_arrows:
             self.renderers_list.append(self.renderer_arrows)
+        if self.show_dots:
+            self.renderers_list.append(self.renderer_dots)
         if self.show_neighbors:
             self.renderers_list.append(self.renderer_neighbors)
         if self.show_bounding_box:

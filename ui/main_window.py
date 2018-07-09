@@ -83,7 +83,7 @@ class MainWindow(Screen):
         b.setCallback(cb)
 
     def windowRenderers(self):
-        height = 150
+        height = 200
         height_min = 30
         width = 200
         window = Window(self, "Renderers")
@@ -116,6 +116,32 @@ class MainWindow(Screen):
             self.gl_canvas.switchBoundingBoxRenderer()
         chb = CheckBox(popupMiscRenderers, "Bounding Box", cb)
         chb.setChecked(self.gl_canvas.show_bounding_box)
+        
+        popupBtnDotRenderer = PopupButton(window, "Dot")
+        popupBtnDotRenderer.setFontSize(16)
+        
+        popupDotRenderer = popupBtnDotRenderer.popup()
+        popupDotRenderer.setLayout(GroupLayout())
+        Label(popupDotRenderer, "Dot Renderer Options")
+        def cb(state):
+            self.gl_canvas.switchDotRenderer(comboDotStyle.selectedIndex())
+            self.gl_canvas.setDotRadius(sliderDotRadius.value())
+        chb = CheckBox(popupDotRenderer, "Dot", cb)
+        def cb(state):
+            self.gl_canvas.setDotRadius(sliderDotRadius.value())
+        sliderDotRadius = Slider(popupDotRenderer)
+        sliderDotRadius.setRange([0,1000])
+        sliderDotRadius.setValue(500)
+        sliderDotRadius.setFixedWidth(80)
+        sliderDotRadius.setCallback(cb)
+        Label(popupDotRenderer, "Dot style :", "sans-bold") 
+        comboDotStyle = ComboBox(popupDotRenderer, 
+            self.gl_canvas.getDotStyles())
+        def cb(state):
+            self.gl_canvas.setDotStyle( comboDotStyle.selectedIndex()) 
+        comboDotStyle.setCallback( cb ) 
+        comboDotStyle.setFontSize(16)
+        comboDotStyle.setFixedSize((100, 20))
       
         popupBtnNeighborsRenderer = PopupButton(window, "Neighbors")
         popupBtnNeighborsRenderer.setFontSize(16)
@@ -149,14 +175,14 @@ class MainWindow(Screen):
         Label(popupCubesRenderer, "Cubes Renderer Options")
         def cb(state):
             self.gl_canvas.switchCubesRenderer()
-            self.gl_canvas.setCubesSize(slider.value())
+            self.gl_canvas.setCubesSize(sliderCubeSize.value())
         chb = CheckBox(popupCubesRenderer, "Cubes", cb)
         def cb(state):
-            self.gl_canvas.setCubesSize(slider.value())
-        slider = Slider(popupCubesRenderer)
-        slider.setValue(0.5)
-        slider.setFixedWidth(80)
-        slider.setCallback(cb)
+            self.gl_canvas.setCubesSize(sliderCubeSize.value())
+        sliderCubeSize = Slider(popupCubesRenderer)
+        sliderCubeSize.setValue(0.5)
+        sliderCubeSize.setFixedWidth(80)
+        sliderCubeSize.setCallback(cb)
 
         buttons = window.buttonPanel()
 
