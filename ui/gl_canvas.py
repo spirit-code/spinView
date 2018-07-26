@@ -1,5 +1,6 @@
 import pyVFRendering as vfr
 import numpy as np
+from ovf import ovf
 
 from nanogui import gl, glfw, GLCanvas
 
@@ -11,26 +12,50 @@ class GLWidget(GLCanvas):
         # Set the size to be equal to Screen
         self.setSize(parent.size())
 
-        self.system_dimensions = np.array([3, 5, 4])
-        self.nx = self.system_dimensions[0]
-        self.ny = self.system_dimensions[1]
-        self.nz = self.system_dimensions[2]
+        # self.system_dimensions = np.array([3, 5, 4])
+        # self.nx = self.system_dimensions[0]
+        # self.ny = self.system_dimensions[1]
+        # self.nz = self.system_dimensions[2]
 
-        # Create the VFR.geometry
-        n_cells = self.system_dimensions
-        self.geometry = vfr.Geometry.rectilinearGeometry(
-            range(n_cells[0]), range(n_cells[1]), range(n_cells[2]))
+        # # Create the VFR.geometry
+        # n_cells = self.system_dimensions
+        # self.geometry = vfr.Geometry.rectilinearGeometry(
+            # range(n_cells[0]), range(n_cells[1]), range(n_cells[2]))
 
-        # Initialize directions
-        directions = []
-        for iz in range(n_cells[2]):
-            for iy in range(n_cells[1]):
-                for ix in range(n_cells[0]):
-                    directions.append([0, 0, 0.5])
-        self.directions = np.array(directions)
+        # # Initialize directions
+        # directions = []
+        # for iz in range(n_cells[2]):
+            # for iy in range(n_cells[1]):
+                # for ix in range(n_cells[0]):
+                    # directions.append([0, 0, 0.5])
+        # self.directions = np.array(directions)
         
-        directions[0] = np.array([0,-0.5,0]) 
-
+        testfile = "img_out.ovf"
+        
+        with ovf.ovf_file(testfile) as ovf_file:
+            print("found:      ", ovf_file.found)
+            print("is_ovf:     ", ovf_file.is_ovf)
+            print("n_segments: ", ovf_file.n_segments)
+            segment = ovf.ovf_segment()
+            success = ovf_file.read_segment_header(0, segment)
+            
+            self.system_dimensions = (segment.n_cells[0], segment.n_cells[1], 
+                segment.n_cells[2], 3)
+            
+            self.nx = segment.n_cells[0]
+            self.ny = segment.n_cells[1]
+            self.nz = segment.n_cells[2]
+            self.nos = self.nx * self.ny * self.nz
+            # Create the VFR.geometry
+            n_cells = self.system_dimensions
+            self.geometry = vfr.Geometry.rectilinearGeometry(
+                range(n_cells[0]), range(n_cells[1]), range(n_cells[2]))
+            
+            print("data shape: ", self.system_dimensions)
+            self.directions = np.zeros(self.system_dimensions, dtype='f')
+            success = ovf_file.read_segment_data(0, segment, self.directions)
+        print("----- ovf test reading done")
+        
         # Create the VFR.view
         self.view = vfr.View()
         self.view.setFramebufferSize(
@@ -38,7 +63,8 @@ class GLWidget(GLCanvas):
             parent.size()[1]*parent.pixelRatio())
 
         # Create/Init VFR.vf
-        self.vf = vfr.VectorField(self.geometry, directions)
+        self.vf = vfr.VectorField(self.geometry, 
+            self.directions.reshape((self.nos, 3)))
 
         # Renderers
         self.show_arrows = False
@@ -81,8 +107,7 @@ class GLWidget(GLCanvas):
         pink_sph = np.array([0, 1, 0.7])/np.linalg.norm([0, 1, 0.7])
 
         # check index
-        nos = self.nx*self.ny*self.nz
-        if index >= nos:
+        if index >= self.nos:
             print("Error: Invalid indeces in Neighbor Renderer")
             return
 
@@ -92,7 +117,7 @@ class GLWidget(GLCanvas):
         k = (((index - i) // self.nx) - j) // self.ny
 
         # create a new direction array that represents the neighbor spheres
-        directions = [[0, 0, 0] for x in range(nos)]
+        directions = [[0, 0, 0] for x in range(self.nos)]
 
         # set the sphere for the spin tha we are looking at
         index = k*self.nx*self.ny + j*self.nx + i
@@ -100,27 +125,27 @@ class GLWidget(GLCanvas):
 
         # set the neighbors
         x_plus = index + 1
-        if x_plus < nos and x_plus >= 0 and not i == (self.nx-1):
+        if x_plus < self.nos and x_plus >= 0 and not i == (self.nx-1):
             directions[x_plus] = pink_sph
 
         x_minus = index - 1
-        if x_minus < nos and x_minus >= 0 and not i == 0:
+        if x_minus < self.nos and x_minus >= 0 and not i == 0:
             directions[x_minus] = pink_sph
 
         y_plus = index + self.nx
-        if y_plus < nos and y_plus >= 0 and not j == (self.ny-1):
+        if y_plus < self.nos and y_plus >= 0 and not j == (self.ny-1):
             directions[y_plus] = pink_sph
 
         y_minus = index - self.nx
-        if y_minus < nos and y_minus >= 0 and not j == 0:
+        if y_minus < self.nos and y_minus >= 0 and not j == 0:
             directions[y_minus] = pink_sph
 
         z_plus = index + self.nx * self.ny
-        if z_plus < nos and z_plus >= 0 and not k == (self.nz-1):
+        if z_plus < self.nos and z_plus >= 0 and not k == (self.nz-1):
             directions[z_plus] = pink_sph
 
         z_minus = index - self.nx * self.ny
-        if z_minus < nos and z_minus >= 0 and not k == 0:
+        if z_minus < self.nos and z_minus >= 0 and not k == 0:
             directions[z_minus] = pink_sph
 
         # scale and add the sphere renderer
@@ -173,16 +198,17 @@ class GLWidget(GLCanvas):
     
     def switchCubesRenderer(self):
         self.renderer_cubes = vfr.ParallelepipedRenderer(self.view, self.vf)
+        self.renderer_cubes.setParallelepipedRotation(False)
         self.show_cubes = not self.show_cubes
         self._setupRenderers()
 
     def setCubesSize(self,scale):
         if self.show_cubes:
-            self.renderer_cubes.setParallelepipedLengthX(scale)
-            self.renderer_cubes.setParallelepipedLengthY(scale)
-            self.renderer_cubes.setParallelepipedLengthZ(scale)
+            self.renderer_cubes.setParallelepipedLengthA(scale)
+            self.renderer_cubes.setParallelepipedLengthB(scale)
+            self.renderer_cubes.setParallelepipedLengthC(scale)
             self._setupRenderers()
-
+    
     def _setupRenderers(self):
         self.renderers_list = []
         if self.show_arrows:
