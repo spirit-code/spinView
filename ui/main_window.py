@@ -184,6 +184,26 @@ class MainWindow(Screen):
         sliderCubeSize.setFixedWidth(80)
         sliderCubeSize.setCallback(cb)
 
+        popupBtnStreamTubeRenderer = PopupButton(window, "Stream tube")
+        popupBtnStreamTubeRenderer.setFontSize(16)
+
+        popupStreamTubeRenderer = popupBtnStreamTubeRenderer.popup()
+        popupStreamTubeRenderer.setLayout(GroupLayout())
+        Label(popupStreamTubeRenderer, "Stream Tube Renderer Options")
+        def cb(state):
+            self.gl_canvas.setStreamTubeBaseStyle( comboStreamTubeBaseStyle.selectedIndex()) 
+            self.gl_canvas.switchStreamtubeRenderer()
+        cb = CheckBox(popupStreamTubeRenderer, "Stream Tube", cb)
+        
+        Label(popupStreamTubeRenderer, "Stream base style :", "sans-bold") 
+        comboStreamTubeBaseStyle = ComboBox(popupStreamTubeRenderer, 
+            self.gl_canvas.getStreamTubeBaseStyles())
+        def cb(state):
+            self.gl_canvas.setStreamTubeBaseStyle( comboStreamTubeBaseStyle.selectedIndex()) 
+        comboStreamTubeBaseStyle.setCallback( cb ) 
+        comboStreamTubeBaseStyle.setFontSize(16)
+        comboStreamTubeBaseStyle.setFixedSize((100, 20))
+        
         buttons = window.buttonPanel()
 
         # Minimize/Maximize

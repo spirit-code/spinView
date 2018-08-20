@@ -55,7 +55,7 @@ class GLWidget(GLCanvas):
             self.directions = np.zeros(self.system_dimensions, dtype='f')
             success = ovf_file.read_segment_data(0, segment, self.directions)
         print("----- ovf test reading done")
-        
+       
         # Create the VFR.view
         self.view = vfr.View()
         self.view.setFramebufferSize(
@@ -73,10 +73,12 @@ class GLWidget(GLCanvas):
         self.show_coordinate_system = False
         self.show_cubes = False 
         self.show_bounding_box = False
-        
+        self.show_stream_tube = False 
+
         # Switch on initial renderers
         self.switchArrowsRenderer()
         self.switchCoordinateSystemRenderer()
+        self.switchBoundingBoxRenderer()
 
         self._setupRenderers()
 
@@ -94,7 +96,6 @@ class GLWidget(GLCanvas):
 
         # For mouse movement events
         self.previous_mouse_position = [0, 0]
-
 
     def switchNeighborRenderer(self, index):
         self.drawNeighbors(index)
@@ -172,6 +173,46 @@ class GLWidget(GLCanvas):
         self.renderer_dots.setDotStyle(index) 
         self._setupRenderers()
 
+    def switchStreamtubeRenderer(self):
+        if not self.show_stream_tube:
+            self.renderer_stream_tube = vfr.StreamTubeRenderer(self.view, 
+                                            self.vf)
+            positions = self.streamtubeBase()
+            self.renderer_stream_tube.seedPositions(positions)
+        else:
+            self.renderer_stream_tube.seedPositions([])
+        self.show_stream_tube = not self.show_stream_tube
+        self._setupRenderers()
+
+    def streamtubeCircularSeeds(self):
+        midx = (self.system_dimensions[0] - 1) / 2
+        midy = (self.system_dimensions[1] - 1) / 2
+        num_positions = 16                              # set
+        radius = 2                                      # set
+        positions = np.zeros(0)
+        for i in range(num_positions):
+            angle = ( 2 * np.pi * i / num_positions )
+            positions = np.append(positions, np.array([midx + radius * np.sin(angle),
+                                                       midy + radius * np.cos(angle), 
+                                                       self.system_dimensions[2] / 2]))
+        return positions.reshape(num_positions,3)
+
+    def streamtubeGridSeeds(self):
+        midx = (self.system_dimensions[0] - 1) / 2
+        midy = (self.system_dimensions[1] - 1) / 2
+        z = self.system_dimensions[2] / 2
+        xside, yside = (4, 4)                            # set
+        xstep, ystep = (1, 1) # increase by 2 for even side points or by 1 for odd
+        nos = xside * yside
+        gxx, gyy = np.mgrid[ midx - xstep * (xside - 1) / 2 : 
+                             midx + xstep * (xside - 1) / 2 : xside * 1j,
+                             midy - ystep * (yside - 1) / 2 : 
+                             midy + ystep * (yside - 1) / 2 : yside * 1j ]
+        gxx = gxx.reshape(1, nos)
+        gyy = gyy.reshape(1, nos)
+        gzz = np.full((1, nos), z)
+        return np.dstack((gxx, gyy, gzz))[0]
+
     def setDotRadius(self,size):
         if self.show_dots:
             self.renderer_dots.setDotRadius(size)
@@ -183,6 +224,19 @@ class GLWidget(GLCanvas):
     def setDotStyle(self, index):
         if self.show_dots: 
             self.renderer_dots.setDotStyle(index) 
+
+    def getStreamTubeBaseStyles(self):
+        return ["Circular", "Grid"]
+
+    def setStreamTubeBaseStyle(self, style):
+        if style == 0:
+            self.streamtubeBase = self.streamtubeCircularSeeds
+        elif style == 1:
+            self.streamtubeBase = self.streamtubeGridSeeds 
+        # if show_stream_tube is True switch off and on the renderer to redraw
+        if self.show_stream_tube:
+            self.switchStreamtubeRenderer()
+            self.switchStreamtubeRenderer()
 
     def switchArrowsRenderer(self):
         self.renderer_arrows = vfr.ArrowRenderer(self.view, self.vf)
@@ -198,7 +252,7 @@ class GLWidget(GLCanvas):
     
     def switchCubesRenderer(self):
         self.renderer_cubes = vfr.ParallelepipedRenderer(self.view, self.vf)
-        self.renderer_cubes.setParallelepipedRotation(False)
+        # self.renderer_cubes.setParallelepipedRotation(False)
         self.show_cubes = not self.show_cubes
         self._setupRenderers()
 
@@ -221,6 +275,8 @@ class GLWidget(GLCanvas):
             self.renderers_list.append(self.renderer_bounding_box)
         if self.show_cubes:
             self.renderers_list.append(self.renderer_cubes)
+        if self.show_stream_tube:
+            self.renderers_list.append(self.renderer_stream_tube)
         # combine renderers
         renderers_system = vfr.CombinedRenderer(
             self.view, self.renderers_list)
