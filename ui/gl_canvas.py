@@ -73,7 +73,7 @@ class GLWidget(GLCanvas):
         self.show_coordinate_system = False
         self.show_cubes = False 
         self.show_bounding_box = False
-        self.show_stream_tube = False 
+        self.show_streamtube = False 
 
         # Switch on initial renderers
         self.switchArrowsRenderer()
@@ -174,20 +174,20 @@ class GLWidget(GLCanvas):
         self._setupRenderers()
 
     def switchStreamtubeRenderer(self):
-        if not self.show_stream_tube:
-            self.renderer_stream_tube = vfr.StreamTubeRenderer(self.view, 
+        if not self.show_streamtube:
+            self.renderer_streamtube = vfr.StreamTubeRenderer(self.view, 
                                             self.vf)
             positions = self.streamtubeBase()
-            self.renderer_stream_tube.seedPositions(positions)
+            self.renderer_streamtube.seedPositions(positions)
         else:
-            self.renderer_stream_tube.seedPositions([])
-        self.show_stream_tube = not self.show_stream_tube
+            self.renderer_streamtube.seedPositions([])
+        self.show_streamtube = not self.show_streamtube
         self._setupRenderers()
 
     def streamtubeCircularSeeds(self):
         midx = (self.system_dimensions[0] - 1) / 2
         midy = (self.system_dimensions[1] - 1) / 2
-        num_positions = 16                              # set
+        num_positions = 8                               # set
         radius = 2                                      # set
         positions = np.zeros(0)
         for i in range(num_positions):
@@ -233,10 +233,26 @@ class GLWidget(GLCanvas):
             self.streamtubeBase = self.streamtubeCircularSeeds
         elif style == 1:
             self.streamtubeBase = self.streamtubeGridSeeds 
-        # if show_stream_tube is True switch off and on the renderer to redraw
-        if self.show_stream_tube:
+        # if show_streamtube is True switch off and on the renderer to redraw
+        if self.show_streamtube:
             self.switchStreamtubeRenderer()
             self.switchStreamtubeRenderer()
+
+    def setStreamtubeRadius(self, radius):
+        if self.show_streamtube:
+            self.renderer_streamtube.setRadius(radius)
+
+    def setStreamtubeResolution(self, resolution):
+        if self.show_streamtube:
+            self.renderer_streamtube.setLevelOfDetail(resolution)
+
+    def setStreamtubeSmoothing(self, smoothing_steps):
+        if self.show_streamtube:
+            self.renderer_streamtube.setSmoothingSteps(smoothing_steps)
+
+    def setStreamtubeStep(self, interpolation_step):
+        if self.show_streamtube:
+            self.renderer_streamtube.setStep(interpolation_step)
 
     def switchArrowsRenderer(self):
         self.renderer_arrows = vfr.ArrowRenderer(self.view, self.vf)
@@ -275,8 +291,8 @@ class GLWidget(GLCanvas):
             self.renderers_list.append(self.renderer_bounding_box)
         if self.show_cubes:
             self.renderers_list.append(self.renderer_cubes)
-        if self.show_stream_tube:
-            self.renderers_list.append(self.renderer_stream_tube)
+        if self.show_streamtube:
+            self.renderers_list.append(self.renderer_streamtube)
         # combine renderers
         renderers_system = vfr.CombinedRenderer(
             self.view, self.renderers_list)
