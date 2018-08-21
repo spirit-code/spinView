@@ -245,7 +245,8 @@ class MainWindow(Screen):
         def cb(state):
             self.gl_canvas.setCubesSize(sliderCubeSize.value())
         sliderCubeSize = Slider(popupCubesRenderer)
-        sliderCubeSize.setValue(0.5)
+        sliderCubeSize.setValue(0.25)
+        sliderCubeSize.setRange((0, 0.5))
         sliderCubeSize.setFixedWidth(120)
         sliderCubeSize.setCallback(cb)
 
