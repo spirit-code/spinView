@@ -225,9 +225,6 @@ class GLWidget(GLCanvas):
         if self.show_dots: 
             self.renderer_dots.setDotStyle(index) 
 
-    def getStreamTubeBaseStyles(self):
-        return ["Circular", "Grid"]
-
     def setStreamTubeBaseStyle(self, style):
         if style == 0:
             self.streamtubeBase = self.streamtubeCircularSeeds

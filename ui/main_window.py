@@ -98,32 +98,62 @@ class MainWindow(Screen):
         popupStreamTubeRenderer.setLayout(GroupLayout())
         Label(popupStreamTubeRenderer, "Stream Tube Renderer Options", "sans-bold")
         def cb(state):
-            self.gl_canvas.setStreamTubeBaseStyle(comboStreamTubeBaseStyle.selectedIndex()) 
+            if cb_circular.checked():
+                self.gl_canvas.setStreamTubeBaseStyle(0) 
+            elif cb_grid.checked():
+                self.gl_canvas.setStreamTubeBaseStyle(1)
             self.gl_canvas.switchStreamtubeRenderer()
             streamtubeOptionsUpdate()
         cb = CheckBox(popupStreamTubeRenderer, "Stream Tube", cb)
         
         Label(popupStreamTubeRenderer, "Stream base style :") 
-        comboStreamTubeBaseStyle = ComboBox(popupStreamTubeRenderer, 
-            self.gl_canvas.getStreamTubeBaseStyles())
-        def cb(state):
-            self.gl_canvas.setStreamTubeBaseStyle(comboStreamTubeBaseStyle.selectedIndex()) 
-            streamtubeOptionsUpdate()
-        comboStreamTubeBaseStyle.setCallback( cb ) 
-        comboStreamTubeBaseStyle.setFontSize(16)
-        comboStreamTubeBaseStyle.setFixedSize((100, 20))
+        # Circular Base Switch and Options
+        def cb_circular(state):
+            # In case of recheck we do not want redrawing
+            if cb_circular.checked():
+                cb_grid.setChecked(False)
+                self.gl_canvas.setStreamTubeBaseStyle(0) 
+                streamtubeOptionsUpdate()
+            cb_circular.setChecked(True) 
+        cb_circular = CheckBox(popupStreamTubeRenderer, "Circular", cb_circular)
+        cb_circular.setChecked(True) 
+        popupBtnCircular = PopupButton(popupStreamTubeRenderer, "Circular Base Options") 
+        popupBtnCircular.setFontSize(14)
+        popupCircular = popupBtnCircular.popup()
+        popupCircular.setLayout(GroupLayout()) 
+        # Grid Base Switch and Options
+        def cb_grid(state):
+            # In case of recheck we do not want redrawing
+            if cb_grid.checked():
+                cb_circular.setChecked(False)
+                self.gl_canvas.setStreamTubeBaseStyle(1)
+                streamtubeOptionsUpdate()
+            cb_grid.setChecked(True)
+        cb_grid = CheckBox(popupStreamTubeRenderer, "Grid", cb_grid)
+        cb_grid.setChecked(False)
+        popupBtnGrid = PopupButton(popupStreamTubeRenderer, "Grid Base Options") 
+        popupBtnGrid.setFontSize(14)
+        popupGrid = popupBtnGrid.popup()
+        popupGrid.setLayout(GroupLayout()) 
         
-        Label(popupStreamTubeRenderer, "Streamtube radius :") 
+        
+        Label(popupStreamTubeRenderer, "Stream Tube Options :") 
+        popupBtnGeneral = PopupButton(popupStreamTubeRenderer, "General Options") 
+        popupBtnGeneral.setFontSize(14)
+        popupGeneral = popupBtnGeneral.popup()
+        popupGeneral.setLayout(GroupLayout()) 
+
+        Label(popupGeneral, "Streamtube radius :") 
         def cb(state):
             self.gl_canvas.setStreamtubeRadius(sliderStreamtubeRadius.value())
-        sliderStreamtubeRadius = Slider(popupStreamTubeRenderer)
+        sliderStreamtubeRadius = Slider(popupGeneral)
         sliderStreamtubeRadius.setRange((0, 0.25))
         sliderStreamtubeRadius.setValue(0.125)
         sliderStreamtubeRadius.setFixedWidth(120)
         sliderStreamtubeRadius.setCallback(cb)
         
-        Label(popupStreamTubeRenderer, "Streamtube level of detail :") 
-        intBoxStreamtubeLoD = IntBox(popupStreamTubeRenderer)
+        Label(popupGeneral, "Streamtube level of detail :") 
+        intBoxStreamtubeLoD = IntBox(popupGeneral)
         intBoxStreamtubeLoD.setEditable(True)
         intBoxStreamtubeLoD.setFixedSize((150, 20))
         intBoxStreamtubeLoD.setUnits("absolute")
@@ -139,8 +169,8 @@ class MainWindow(Screen):
             self.gl_canvas.setStreamtubeResolution(intBoxStreamtubeLoD.value())
         intBoxStreamtubeLoD.setCallback(update_cb)
         
-        Label(popupStreamTubeRenderer, "Streamtube smoothing :") 
-        intBoxStreamtubeSmoothing = IntBox(popupStreamTubeRenderer)
+        Label(popupGeneral, "Streamtube smoothing :") 
+        intBoxStreamtubeSmoothing = IntBox(popupGeneral)
         intBoxStreamtubeSmoothing.setEditable(True)
         intBoxStreamtubeSmoothing.setFixedSize((150, 20))
         intBoxStreamtubeSmoothing.setUnits("steps")
@@ -156,8 +186,8 @@ class MainWindow(Screen):
             self.gl_canvas.setStreamtubeSmoothing(intBoxStreamtubeSmoothing.value())
         intBoxStreamtubeSmoothing.setCallback(update_cb)
         
-        Label(popupStreamTubeRenderer, "Streamtube step :") 
-        intBoxStreamtubeStep = IntBox(popupStreamTubeRenderer)
+        Label(popupGeneral, "Streamtube step :") 
+        intBoxStreamtubeStep = IntBox(popupGeneral)
         intBoxStreamtubeStep.setEditable(True)
         intBoxStreamtubeStep.setFixedSize((150, 20))
         intBoxStreamtubeStep.setValue(1)
