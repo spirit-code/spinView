@@ -172,47 +172,15 @@ class MainWindow(Screen):
             self.gl_canvas.setStreamtubeStep(intBoxStreamtubeStep.value())
         intBoxStreamtubeStep.setCallback(update_cb)
 
-    def windowRenderers(self):
-        height = 200
-        height_min = 30
-        width = 200
-        self.window = Window(self, "Renderers")
-        self.window.setFixedSize(
-            (width*self.pixelRatio(), height*self.pixelRatio()))
-        self.window.setPosition((5, 235))
-        self.window.setLayout(GroupLayout())
-
-        def mouseDragEvent():
-            pass
-
-        popupBtnMiscRenderers = PopupButton(self.window, "Misc")
-        popupBtnMiscRenderers.setFontSize(16)
-
-        popupMiscRenderers = popupBtnMiscRenderers.popup()
-        popupMiscRenderers.setLayout(GroupLayout())
-        Label(popupMiscRenderers, "Miscaleneous Renderers")
-        def cb(state):
-            self.gl_canvas.switchArrowsRenderer()
-        chb = CheckBox(popupMiscRenderers, "Arrows", cb)
-        chb.setChecked(self.gl_canvas.show_arrows)
-        def cb(state):
-            self.gl_canvas.switchCoordinateSystemRenderer()
-        chb = CheckBox(popupMiscRenderers, "Coordinates", cb)
-        chb.setChecked(self.gl_canvas.show_coordinate_system)
-        def cb(state):
-            print("Not implemented!")
-        chb = CheckBox(popupMiscRenderers, "ArrowsSphere", cb)
-        def cb(state):
-            self.gl_canvas.switchBoundingBoxRenderer()
-        chb = CheckBox(popupMiscRenderers, "Bounding Box", cb)
-        chb.setChecked(self.gl_canvas.show_bounding_box)
+    def dotsRenderWindow(self):
+        """ Popup window for Dots Renderer control and options"""
         
-        popupBtnDotRenderer = PopupButton(self.window, "Dot")
+        popupBtnDotRenderer = PopupButton(self.window, "Dots")
         popupBtnDotRenderer.setFontSize(16)
         
         popupDotRenderer = popupBtnDotRenderer.popup()
         popupDotRenderer.setLayout(GroupLayout())
-        Label(popupDotRenderer, "Dot Renderer Options")
+        Label(popupDotRenderer, "Dot Renderer Options", "sans-bold")
         def cb(state):
             self.gl_canvas.switchDotRenderer(comboDotStyle.selectedIndex())
             self.gl_canvas.setDotRadius(sliderDotRadius.value())
@@ -222,9 +190,9 @@ class MainWindow(Screen):
         sliderDotRadius = Slider(popupDotRenderer)
         sliderDotRadius.setRange([0,1000])
         sliderDotRadius.setValue(500)
-        sliderDotRadius.setFixedWidth(80)
+        sliderDotRadius.setFixedWidth(120)
         sliderDotRadius.setCallback(cb)
-        Label(popupDotRenderer, "Dot style :", "sans-bold") 
+        Label(popupDotRenderer, "Dot style") 
         comboDotStyle = ComboBox(popupDotRenderer, 
             self.gl_canvas.getDotStyles())
         def cb(state):
@@ -232,13 +200,16 @@ class MainWindow(Screen):
         comboDotStyle.setCallback( cb ) 
         comboDotStyle.setFontSize(16)
         comboDotStyle.setFixedSize((100, 20))
-      
+
+    def neighborsRendererWindow(self):
+        """ Popup window for Neighbors Renderer control and options"""
+        
         popupBtnNeighborsRenderer = PopupButton(self.window, "Neighbors")
         popupBtnNeighborsRenderer.setFontSize(16)
         
         popupNeighborsRenderer = popupBtnNeighborsRenderer.popup()
         popupNeighborsRenderer.setLayout(GroupLayout())
-        Label(popupNeighborsRenderer, "Neighbors Renderer Options")
+        Label(popupNeighborsRenderer, "Neighbors Renderer Options", "sans-bold")
         def switch_cb(state):
             self.gl_canvas.switchNeighborRenderer(intBox.value()-1)
         chb = CheckBox(popupNeighborsRenderer, "Neighbors", switch_cb)
@@ -256,13 +227,17 @@ class MainWindow(Screen):
         def update_cb(state):
             self.gl_canvas.drawNeighbors(intBox.value()-1)
         intBox.setCallback(update_cb)
-         
+
+
+    def cubesRendererWindow(self):
+        """ Popup window for Cubes Renderer control and options"""
+
         popupBtnCubesRenderer = PopupButton(self.window, "Cubes")
         popupBtnCubesRenderer.setFontSize(16) 
         
         popupCubesRenderer = popupBtnCubesRenderer.popup()
         popupCubesRenderer.setLayout(GroupLayout())
-        Label(popupCubesRenderer, "Cubes Renderer Options")
+        Label(popupCubesRenderer, "Cubes Renderer Options", "sans-bold")
         def cb(state):
             self.gl_canvas.switchCubesRenderer()
             self.gl_canvas.setCubesSize(sliderCubeSize.value())
@@ -271,10 +246,59 @@ class MainWindow(Screen):
             self.gl_canvas.setCubesSize(sliderCubeSize.value())
         sliderCubeSize = Slider(popupCubesRenderer)
         sliderCubeSize.setValue(0.5)
-        sliderCubeSize.setFixedWidth(80)
+        sliderCubeSize.setFixedWidth(120)
         sliderCubeSize.setCallback(cb)
 
+    def arrowsRendererWindow(self):
+        """ Popup window for Arrows Renderer control and options"""
+        
+        popupBtnArrowsRenderer = PopupButton(self.window, "Arrows")
+        popupBtnArrowsRenderer.setFontSize(16)
+
+        popupArrowsRenderer = popupBtnArrowsRenderer.popup()
+        popupArrowsRenderer.setLayout(GroupLayout())
+        Label(popupArrowsRenderer, "Arrows Renderer Options", "sans-bold")
+        def cb(state):
+            self.gl_canvas.switchArrowsRenderer()
+        chb = CheckBox(popupArrowsRenderer, "Arrows", cb)
+        chb.setChecked(self.gl_canvas.show_arrows)
+
+    def miscaleneousRenderersWindow(self):
+
+        popupBtnMiscRenderers = PopupButton(self.window, "Misc")
+        popupBtnMiscRenderers.setFontSize(16)
+
+        popupMiscRenderers = popupBtnMiscRenderers.popup()
+        popupMiscRenderers.setLayout(GroupLayout())
+        Label(popupMiscRenderers, "Miscaleneous Renderers", "sans-bold")
+        def cb(state):
+            self.gl_canvas.switchCoordinateSystemRenderer()
+        chb = CheckBox(popupMiscRenderers, "Coordinates", cb)
+        chb.setChecked(self.gl_canvas.show_coordinate_system)
+        def cb(state):
+            print("Not implemented!")
+        chb = CheckBox(popupMiscRenderers, "ArrowsSphere", cb)
+        def cb(state):
+            self.gl_canvas.switchBoundingBoxRenderer()
+        chb = CheckBox(popupMiscRenderers, "Bounding Box", cb)
+        chb.setChecked(self.gl_canvas.show_bounding_box)
+
+    def windowRenderers(self):
+        height = 240
+        height_min = 30
+        width = 200
+        self.window = Window(self, "Renderers")
+        self.window.setFixedSize(
+            (width*self.pixelRatio(), height*self.pixelRatio()))
+        self.window.setPosition((5, 235))
+        self.window.setLayout(GroupLayout())
+
+        self.arrowsRendererWindow();
+        self.cubesRendererWindow();
+        self.dotsRenderWindow();
         self.streamtubeRendererWindow();
+        self.neighborsRendererWindow();
+        self.miscaleneousRenderersWindow();
         
         buttons = self.window.buttonPanel()
 
