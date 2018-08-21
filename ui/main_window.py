@@ -82,109 +82,10 @@ class MainWindow(Screen):
         b.setBackgroundColor(Color(0, 0, 1.0, 0.1))
         b.setCallback(cb)
 
-    def windowRenderers(self):
-        height = 200
-        height_min = 30
-        width = 200
-        window = Window(self, "Renderers")
-        window.setFixedSize(
-            (width*self.pixelRatio(), height*self.pixelRatio()))
-        window.setPosition((5, 235))
-        window.setLayout(GroupLayout())
+    def streamtubeRendererWindow(self):
+        """ Popup window for Streamtube Renderer control and options"""
 
-        def mouseDragEvent(window):
-            pass
-
-        popupBtnMiscRenderers = PopupButton(window, "Misc")
-        popupBtnMiscRenderers.setFontSize(16)
-
-        popupMiscRenderers = popupBtnMiscRenderers.popup()
-        popupMiscRenderers.setLayout(GroupLayout())
-        Label(popupMiscRenderers, "Miscaleneous Renderers")
-        def cb(state):
-            self.gl_canvas.switchArrowsRenderer()
-        chb = CheckBox(popupMiscRenderers, "Arrows", cb)
-        chb.setChecked(self.gl_canvas.show_arrows)
-        def cb(state):
-            self.gl_canvas.switchCoordinateSystemRenderer()
-        chb = CheckBox(popupMiscRenderers, "Coordinates", cb)
-        chb.setChecked(self.gl_canvas.show_coordinate_system)
-        def cb(state):
-            print("Not implemented!")
-        chb = CheckBox(popupMiscRenderers, "ArrowsSphere", cb)
-        def cb(state):
-            self.gl_canvas.switchBoundingBoxRenderer()
-        chb = CheckBox(popupMiscRenderers, "Bounding Box", cb)
-        chb.setChecked(self.gl_canvas.show_bounding_box)
-        
-        popupBtnDotRenderer = PopupButton(window, "Dot")
-        popupBtnDotRenderer.setFontSize(16)
-        
-        popupDotRenderer = popupBtnDotRenderer.popup()
-        popupDotRenderer.setLayout(GroupLayout())
-        Label(popupDotRenderer, "Dot Renderer Options")
-        def cb(state):
-            self.gl_canvas.switchDotRenderer(comboDotStyle.selectedIndex())
-            self.gl_canvas.setDotRadius(sliderDotRadius.value())
-        chb = CheckBox(popupDotRenderer, "Dot", cb)
-        def cb(state):
-            self.gl_canvas.setDotRadius(sliderDotRadius.value())
-        sliderDotRadius = Slider(popupDotRenderer)
-        sliderDotRadius.setRange([0,1000])
-        sliderDotRadius.setValue(500)
-        sliderDotRadius.setFixedWidth(80)
-        sliderDotRadius.setCallback(cb)
-        Label(popupDotRenderer, "Dot style :", "sans-bold") 
-        comboDotStyle = ComboBox(popupDotRenderer, 
-            self.gl_canvas.getDotStyles())
-        def cb(state):
-            self.gl_canvas.setDotStyle( comboDotStyle.selectedIndex()) 
-        comboDotStyle.setCallback( cb ) 
-        comboDotStyle.setFontSize(16)
-        comboDotStyle.setFixedSize((100, 20))
-      
-        popupBtnNeighborsRenderer = PopupButton(window, "Neighbors")
-        popupBtnNeighborsRenderer.setFontSize(16)
-        
-        popupNeighborsRenderer = popupBtnNeighborsRenderer.popup()
-        popupNeighborsRenderer.setLayout(GroupLayout())
-        Label(popupNeighborsRenderer, "Neighbors Renderer Options")
-        def switch_cb(state):
-            self.gl_canvas.switchNeighborRenderer(intBox.value()-1)
-        chb = CheckBox(popupNeighborsRenderer, "Neighbors", switch_cb)
-        intBox = IntBox(popupNeighborsRenderer)
-        intBox.setEditable(True)
-        intBox.setFixedSize((150, 20))
-        intBox.setUnits("spin index")
-        intBox.setValue(1)
-        intBox.setDefaultValue("1")
-        intBox.setFontSize(16)
-        intBox.setFormat("[1-9][0-9]*")
-        intBox.setSpinnable(True)
-        intBox.setMinValue(1)
-        intBox.setValueIncrement(1)
-        def update_cb(state):
-            self.gl_canvas.drawNeighbors(intBox.value()-1)
-        intBox.setCallback(update_cb)
-         
-        popupBtnCubesRenderer = PopupButton(window, "Cubes")
-        popupBtnCubesRenderer.setFontSize(16) 
-        
-        popupCubesRenderer = popupBtnCubesRenderer.popup()
-        popupCubesRenderer.setLayout(GroupLayout())
-        Label(popupCubesRenderer, "Cubes Renderer Options")
-        def cb(state):
-            self.gl_canvas.switchCubesRenderer()
-            self.gl_canvas.setCubesSize(sliderCubeSize.value())
-        chb = CheckBox(popupCubesRenderer, "Cubes", cb)
-        def cb(state):
-            self.gl_canvas.setCubesSize(sliderCubeSize.value())
-        sliderCubeSize = Slider(popupCubesRenderer)
-        sliderCubeSize.setValue(0.5)
-        sliderCubeSize.setFixedWidth(80)
-        sliderCubeSize.setCallback(cb)
-
-        popupBtnStreamTubeRenderer = PopupButton(window, "Stream tube")
+        popupBtnStreamTubeRenderer = PopupButton(self.window, "Stream tube")
         popupBtnStreamTubeRenderer.setFontSize(16)
 
         def streamtubeOptionsUpdate():
@@ -270,17 +171,121 @@ class MainWindow(Screen):
         def update_cb(state):
             self.gl_canvas.setStreamtubeStep(intBoxStreamtubeStep.value())
         intBoxStreamtubeStep.setCallback(update_cb)
+
+    def windowRenderers(self):
+        height = 200
+        height_min = 30
+        width = 200
+        self.window = Window(self, "Renderers")
+        self.window.setFixedSize(
+            (width*self.pixelRatio(), height*self.pixelRatio()))
+        self.window.setPosition((5, 235))
+        self.window.setLayout(GroupLayout())
+
+        def mouseDragEvent():
+            pass
+
+        popupBtnMiscRenderers = PopupButton(self.window, "Misc")
+        popupBtnMiscRenderers.setFontSize(16)
+
+        popupMiscRenderers = popupBtnMiscRenderers.popup()
+        popupMiscRenderers.setLayout(GroupLayout())
+        Label(popupMiscRenderers, "Miscaleneous Renderers")
+        def cb(state):
+            self.gl_canvas.switchArrowsRenderer()
+        chb = CheckBox(popupMiscRenderers, "Arrows", cb)
+        chb.setChecked(self.gl_canvas.show_arrows)
+        def cb(state):
+            self.gl_canvas.switchCoordinateSystemRenderer()
+        chb = CheckBox(popupMiscRenderers, "Coordinates", cb)
+        chb.setChecked(self.gl_canvas.show_coordinate_system)
+        def cb(state):
+            print("Not implemented!")
+        chb = CheckBox(popupMiscRenderers, "ArrowsSphere", cb)
+        def cb(state):
+            self.gl_canvas.switchBoundingBoxRenderer()
+        chb = CheckBox(popupMiscRenderers, "Bounding Box", cb)
+        chb.setChecked(self.gl_canvas.show_bounding_box)
         
-        buttons = window.buttonPanel()
+        popupBtnDotRenderer = PopupButton(self.window, "Dot")
+        popupBtnDotRenderer.setFontSize(16)
+        
+        popupDotRenderer = popupBtnDotRenderer.popup()
+        popupDotRenderer.setLayout(GroupLayout())
+        Label(popupDotRenderer, "Dot Renderer Options")
+        def cb(state):
+            self.gl_canvas.switchDotRenderer(comboDotStyle.selectedIndex())
+            self.gl_canvas.setDotRadius(sliderDotRadius.value())
+        chb = CheckBox(popupDotRenderer, "Dot", cb)
+        def cb(state):
+            self.gl_canvas.setDotRadius(sliderDotRadius.value())
+        sliderDotRadius = Slider(popupDotRenderer)
+        sliderDotRadius.setRange([0,1000])
+        sliderDotRadius.setValue(500)
+        sliderDotRadius.setFixedWidth(80)
+        sliderDotRadius.setCallback(cb)
+        Label(popupDotRenderer, "Dot style :", "sans-bold") 
+        comboDotStyle = ComboBox(popupDotRenderer, 
+            self.gl_canvas.getDotStyles())
+        def cb(state):
+            self.gl_canvas.setDotStyle( comboDotStyle.selectedIndex()) 
+        comboDotStyle.setCallback( cb ) 
+        comboDotStyle.setFontSize(16)
+        comboDotStyle.setFixedSize((100, 20))
+      
+        popupBtnNeighborsRenderer = PopupButton(self.window, "Neighbors")
+        popupBtnNeighborsRenderer.setFontSize(16)
+        
+        popupNeighborsRenderer = popupBtnNeighborsRenderer.popup()
+        popupNeighborsRenderer.setLayout(GroupLayout())
+        Label(popupNeighborsRenderer, "Neighbors Renderer Options")
+        def switch_cb(state):
+            self.gl_canvas.switchNeighborRenderer(intBox.value()-1)
+        chb = CheckBox(popupNeighborsRenderer, "Neighbors", switch_cb)
+        intBox = IntBox(popupNeighborsRenderer)
+        intBox.setEditable(True)
+        intBox.setFixedSize((150, 20))
+        intBox.setUnits("spin index")
+        intBox.setValue(1)
+        intBox.setDefaultValue("1")
+        intBox.setFontSize(16)
+        intBox.setFormat("[1-9][0-9]*")
+        intBox.setSpinnable(True)
+        intBox.setMinValue(1)
+        intBox.setValueIncrement(1)
+        def update_cb(state):
+            self.gl_canvas.drawNeighbors(intBox.value()-1)
+        intBox.setCallback(update_cb)
+         
+        popupBtnCubesRenderer = PopupButton(self.window, "Cubes")
+        popupBtnCubesRenderer.setFontSize(16) 
+        
+        popupCubesRenderer = popupBtnCubesRenderer.popup()
+        popupCubesRenderer.setLayout(GroupLayout())
+        Label(popupCubesRenderer, "Cubes Renderer Options")
+        def cb(state):
+            self.gl_canvas.switchCubesRenderer()
+            self.gl_canvas.setCubesSize(sliderCubeSize.value())
+        chb = CheckBox(popupCubesRenderer, "Cubes", cb)
+        def cb(state):
+            self.gl_canvas.setCubesSize(sliderCubeSize.value())
+        sliderCubeSize = Slider(popupCubesRenderer)
+        sliderCubeSize.setValue(0.5)
+        sliderCubeSize.setFixedWidth(80)
+        sliderCubeSize.setCallback(cb)
+
+        self.streamtubeRendererWindow();
+        
+        buttons = self.window.buttonPanel()
 
         # Minimize/Maximize
         b_minmax = Button(buttons, "", icon=entypo.ICON_CHEVRON_DOWN)
 
         def cb():
-            if window.height() == height_min:
-                window.setHeight(height)
+            if self.window.height() == height_min:
+                self.window.setHeight(height)
             else:
-                window.setHeight(height_min)
+                self.window.setHeight(height_min)
             b_minmax.setPushed(not b_minmax.pushed())
         b_minmax.setCallback(cb)
 
@@ -288,7 +293,7 @@ class MainWindow(Screen):
         b_close = Button(buttons, "", icon=entypo.ICON_CIRCLE_WITH_CROSS)
 
         def cb():
-            window.dispose()
+            self.window.dispose()
         b_close.setCallback(cb)
 
     def draw(self, ctx):
