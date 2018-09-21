@@ -58,6 +58,9 @@ class MainWindow(Screen):
         if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
             self.setVisible(False)
             return True
+        if key == glfw.KEY_C and action == glfw.PRESS:
+            print( "Canvas Loaded" )
+            return True
         return False
 
     def resizeEvent(self, size):

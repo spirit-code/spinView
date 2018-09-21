@@ -213,6 +213,11 @@ class GLWidget(GLCanvas):
         gzz = np.full((1, nos), z)
         return np.dstack((gxx, gyy, gzz))[0]
 
+    def getStreamtubeDetails(self):
+        temp = vfr.StreamTubeRenderer(self.view, self.vf)
+        return temp.getRadius(), temp.getLevelOfDetail(),\
+               temp.getStep(), temp.getSmoothingSteps() 
+
     def setDotRadius(self,size):
         if self.show_dots:
             self.renderer_dots.setDotRadius(size)

@@ -14,12 +14,12 @@ class RenderersWindow(base.FloatingWindow):
         self.neighborsRendererWindow();
         self.miscaleneousRenderersWindow();
     
-    def streamtubeOptionsUpdate():
-        self.pw.gl_canvas.setStreamtubeRadius(sliderStreamtubeRadius.value())
-        self.pw.gl_canvas.setStreamtubeResolution(intBoxStreamtubeLoD.value())
-        self.pw.gl_canvas.setStreamtubeSmoothing(intBoxStreamtubeSmoothing.value())
-        self.pw.gl_canvas.setStreamtubeStep(intBoxStreamtubeStep.value())
-    
+    def streamtubeOptionsUpdate(self):
+        self.pw.gl_canvas.setStreamtubeRadius(self.sliderStreamtubeRadius.value())
+        self.pw.gl_canvas.setStreamtubeResolution(self.intBoxStreamtubeLoD.value())
+        self.pw.gl_canvas.setStreamtubeSmoothing(self.intBoxStreamtubeSmoothing.value())
+        self.pw.gl_canvas.setStreamtubeStep(self.intBoxStreamtubeStep.value())
+
     def streamtubeRendererWindow(self):
         """ Popup window for Streamtube Renderer control and options"""
 
@@ -39,6 +39,7 @@ class RenderersWindow(base.FloatingWindow):
         cb = CheckBox(popupStreamTubeRenderer, "Stream Tube", cb)
         
         Label(popupStreamTubeRenderer, "Stream base style :") 
+        
         # Circular Base Switch and Options
         def cb_circular(state):
             # In case of recheck we do not want redrawing
@@ -53,6 +54,10 @@ class RenderersWindow(base.FloatingWindow):
         popupBtnCircular.setFontSize(14)
         popupCircular = popupBtnCircular.popup()
         popupCircular.setLayout(GroupLayout()) 
+        Label(popupCircular, "Spins in circumeference :")
+        Label(popupCircular, "Radius :")
+        Label(popupCircular, "Position :")
+
         # Grid Base Switch and Options
         def cb_grid(state):
             # In case of recheck we do not want redrawing
@@ -66,8 +71,9 @@ class RenderersWindow(base.FloatingWindow):
         popupBtnGrid = PopupButton(popupStreamTubeRenderer, "Grid Base Options") 
         popupBtnGrid.setFontSize(14)
         popupGrid = popupBtnGrid.popup()
-        popupGrid.setLayout(GroupLayout()) 
-        
+        popupGrid.setLayout(GroupLayout())
+        Label(popupGrid, "Spins in circumeference :")
+        Label(popupGrid, "Position :")
         
         Label(popupStreamTubeRenderer, "Stream Tube Options :") 
         popupBtnGeneral = PopupButton(popupStreamTubeRenderer, "General Options") 
@@ -77,62 +83,60 @@ class RenderersWindow(base.FloatingWindow):
 
         Label(popupGeneral, "Streamtube radius :") 
         def cb(state):
-            self.pw.gl_canvas.setStreamtubeRadius(sliderStreamtubeRadius.value())
-        sliderStreamtubeRadius = Slider(popupGeneral)
-        sliderStreamtubeRadius.setRange((0, 0.25))
-        sliderStreamtubeRadius.setValue(0.125)
-        sliderStreamtubeRadius.setFixedWidth(120)
-        sliderStreamtubeRadius.setCallback(cb)
+            self.pw.gl_canvas.setStreamtubeRadius(self.sliderStreamtubeRadius.value())
+        self.sliderStreamtubeRadius = Slider(popupGeneral)
+        self.sliderStreamtubeRadius.setValue(self.pw.gl_canvas.getStreamtubeDetails()[0])
+        self.sliderStreamtubeRadius.setRange((0, 2*self.sliderStreamtubeRadius.value()))
+        self.sliderStreamtubeRadius.setFixedWidth(120)
+        self.sliderStreamtubeRadius.setCallback(cb)
         
         Label(popupGeneral, "Streamtube level of detail :") 
-        intBoxStreamtubeLoD = IntBox(popupGeneral)
-        intBoxStreamtubeLoD.setEditable(True)
-        intBoxStreamtubeLoD.setFixedSize((150, 20))
-        intBoxStreamtubeLoD.setUnits("absolute")
-        intBoxStreamtubeLoD.setValue(20)
-        intBoxStreamtubeLoD.setDefaultValue("1")
-        intBoxStreamtubeLoD.setFontSize(16)
-        intBoxStreamtubeLoD.setFormat("[3-9]|1[0-9]|20")
-        intBoxStreamtubeLoD.setSpinnable(True)
-        intBoxStreamtubeLoD.setMinValue(3)
-        intBoxStreamtubeLoD.setMaxValue(20)
-        intBoxStreamtubeLoD.setValueIncrement(1)
+        self.intBoxStreamtubeLoD = IntBox(popupGeneral)
+        self.intBoxStreamtubeLoD.setEditable(True)
+        self.intBoxStreamtubeLoD.setFixedSize((150, 20))
+        self.intBoxStreamtubeLoD.setUnits("absolute")
+        self.intBoxStreamtubeLoD.setValue(int(self.pw.gl_canvas.getStreamtubeDetails()[1]))
+        self.intBoxStreamtubeLoD.setFontSize(16)
+        self.intBoxStreamtubeLoD.setFormat("[3-9]|1[0-9]|20")
+        self.intBoxStreamtubeLoD.setSpinnable(True)
+        self.intBoxStreamtubeLoD.setMinValue(3)
+        self.intBoxStreamtubeLoD.setMaxValue(20)
+        self.intBoxStreamtubeLoD.setValueIncrement(1)
         def update_cb(state):
-            self.pw.gl_canvas.setStreamtubeResolution(intBoxStreamtubeLoD.value())
-        intBoxStreamtubeLoD.setCallback(update_cb)
+            self.pw.gl_canvas.setStreamtubeResolution(self.intBoxStreamtubeLoD.value())
+        self.intBoxStreamtubeLoD.setCallback(update_cb)
         
         Label(popupGeneral, "Streamtube smoothing :") 
-        intBoxStreamtubeSmoothing = IntBox(popupGeneral)
-        intBoxStreamtubeSmoothing.setEditable(True)
-        intBoxStreamtubeSmoothing.setFixedSize((150, 20))
-        intBoxStreamtubeSmoothing.setUnits("steps")
-        intBoxStreamtubeSmoothing.setValue(3)
-        intBoxStreamtubeSmoothing.setDefaultValue("1")
-        intBoxStreamtubeSmoothing.setFontSize(16)
-        intBoxStreamtubeSmoothing.setFormat("[0-9]")
-        intBoxStreamtubeSmoothing.setSpinnable(True)
-        intBoxStreamtubeSmoothing.setMinValue(0)
-        intBoxStreamtubeSmoothing.setMaxValue(9)
-        intBoxStreamtubeSmoothing.setValueIncrement(1)
+        self.intBoxStreamtubeSmoothing = IntBox(popupGeneral)
+        self.intBoxStreamtubeSmoothing.setEditable(True)
+        self.intBoxStreamtubeSmoothing.setFixedSize((150, 20))
+        self.intBoxStreamtubeSmoothing.setUnits("steps")
+        self.intBoxStreamtubeSmoothing.setValue(int(self.pw.gl_canvas.getStreamtubeDetails()[3]))
+        self.intBoxStreamtubeSmoothing.setFontSize(16)
+        self.intBoxStreamtubeSmoothing.setFormat("[0-9]")
+        self.intBoxStreamtubeSmoothing.setSpinnable(True)
+        self.intBoxStreamtubeSmoothing.setMinValue(0)
+        self.intBoxStreamtubeSmoothing.setMaxValue(9)
+        self.intBoxStreamtubeSmoothing.setValueIncrement(1)
         def update_cb(state):
-            self.pw.gl_canvas.setStreamtubeSmoothing(intBoxStreamtubeSmoothing.value())
-        intBoxStreamtubeSmoothing.setCallback(update_cb)
+            self.pw.gl_canvas.setStreamtubeSmoothing(self.intBoxStreamtubeSmoothing.value())
+        self.intBoxStreamtubeSmoothing.setCallback(update_cb)
         
         Label(popupGeneral, "Streamtube step :") 
-        intBoxStreamtubeStep = IntBox(popupGeneral)
-        intBoxStreamtubeStep.setEditable(True)
-        intBoxStreamtubeStep.setFixedSize((150, 20))
-        intBoxStreamtubeStep.setValue(1)
-        intBoxStreamtubeStep.setDefaultValue("1")
-        intBoxStreamtubeStep.setFontSize(16)
-        intBoxStreamtubeStep.setFormat("[1-9]|1[0-9]|[20]")
-        intBoxStreamtubeStep.setSpinnable(True)
-        intBoxStreamtubeStep.setMinValue(1)
-        intBoxStreamtubeStep.setMaxValue(20)
-        intBoxStreamtubeStep.setValueIncrement(1)
+        self.intBoxStreamtubeStep = IntBox(popupGeneral)
+        self.intBoxStreamtubeStep.setEditable(True)
+        self.intBoxStreamtubeStep.setFixedSize((150, 20))
+        self.intBoxStreamtubeStep.setValue(int(self.pw.gl_canvas.getStreamtubeDetails()[2]))
+        self.intBoxStreamtubeStep.setDefaultValue("1")
+        self.intBoxStreamtubeStep.setFontSize(16)
+        self.intBoxStreamtubeStep.setFormat("[1-9]|1[0-9]|[20]")
+        self.intBoxStreamtubeStep.setSpinnable(True)
+        self.intBoxStreamtubeStep.setMinValue(1)
+        self.intBoxStreamtubeStep.setMaxValue(20)
+        self.intBoxStreamtubeStep.setValueIncrement(1)
         def update_cb(state):
-            self.pw.gl_canvas.setStreamtubeStep(intBoxStreamtubeStep.value())
-        intBoxStreamtubeStep.setCallback(update_cb)
+            self.pw.gl_canvas.setStreamtubeStep(self.intBoxStreamtubeStep.value())
+        self.intBoxStreamtubeStep.setCallback(update_cb)
 
     def dotsRenderWindow(self):
         """ Popup window for Dots Renderer control and options"""
@@ -226,6 +230,7 @@ class RenderersWindow(base.FloatingWindow):
         chb.setChecked(self.pw.gl_canvas.show_arrows)
 
     def miscaleneousRenderersWindow(self):
+        """ Popup window for other Renderers and general options"""
 
         popupBtnMiscRenderers = PopupButton(self.window, "Misc")
         popupBtnMiscRenderers.setFontSize(16)
