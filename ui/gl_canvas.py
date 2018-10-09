@@ -74,11 +74,7 @@ class GLWidget(GLCanvas):
         # Renderers
         self.arrows = ArrowsRenderer(self.view, self.vf) 
         self.dots = DotsRenderer(self.view, self.vf) 
-       
-        # TODO: FIX
-        # self.show_neighbors = False
         self.neighbors = NeighborsRenderer(self.view, self.geometry, self.system_dimensions) 
-        
         self.coordinate = CoordinateSystemRenderer(self.view)
         self.cubes = CubesRenderer(self.view, self.vf) 
         self.bounding_box = BoundingBoxRenderer(self.view, self.geometry, self.system_dimensions) 
