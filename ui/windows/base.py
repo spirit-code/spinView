@@ -7,7 +7,7 @@ class FloatingWindow():
         self.pw = parent_window
 
         # Default properties 
-        default_height = 200
+        default_height = 250
         default_height_min = 30
         default_width = 200
         

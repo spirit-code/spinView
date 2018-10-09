@@ -1,8 +1,13 @@
 import pyVFRendering as vfr
 import numpy as np
 from ovf import ovf
-
 from nanogui import gl, glfw, GLCanvas
+
+from renderers.general import CoordinateSystemRenderer, BoundingBoxRenderer, \
+     NeighborsRenderer
+from renderers.vectorfield import ArrowsRenderer, CubesRenderer, DotsRenderer, \
+    StreamTubeRenderer
+
 
 class GLWidget(GLCanvas):
 
@@ -67,20 +72,24 @@ class GLWidget(GLCanvas):
             self.directions.reshape((self.nos, 3)))
 
         # Renderers
-        self.show_arrows = False
-        self.show_dots = False
-        self.show_neighbors = False
-        self.show_coordinate_system = False
-        self.show_cubes = False 
-        self.show_bounding_box = False
-        self.show_streamtube = False 
+        self.arrows = ArrowsRenderer(self.view, self.vf) 
+        self.dots = DotsRenderer(self.view, self.vf) 
+       
+        # TODO: FIX
+        # self.show_neighbors = False
+        self.neighbors = NeighborsRenderer(self.view, self.geometry, self.system_dimensions) 
+        
+        self.coordinate = CoordinateSystemRenderer(self.view)
+        self.cubes = CubesRenderer(self.view, self.vf) 
+        self.bounding_box = BoundingBoxRenderer(self.view, self.geometry, self.system_dimensions) 
+        self.streamtubes = StreamTubeRenderer(self.view, self.vf, self.system_dimensions)
 
         # Switch on initial renderers
-        self.switchArrowsRenderer()
-        self.switchCoordinateSystemRenderer()
-        self.switchBoundingBoxRenderer()
+        self.arrows.switch() 
+        self.coordinate.switch() 
+        self.bounding_box.switch()
 
-        self._setupRenderers()
+        self.updateRenderers()
 
         # Options
         self.options = vfr.Options()
@@ -97,212 +106,27 @@ class GLWidget(GLCanvas):
         # For mouse movement events
         self.previous_mouse_position = [0, 0]
 
-    def switchNeighborRenderer(self, index):
-        self.drawNeighbors(index)
-        self.show_neighbors = not self.show_neighbors
-        self._setupRenderers()
-
-    def drawNeighbors(self, index):
-        scale = 0.8
-        cyan_sph = np.array([-1, -1, 0.7])/np.linalg.norm([-1, -1, 0.7])
-        pink_sph = np.array([0, 1, 0.7])/np.linalg.norm([0, 1, 0.7])
-
-        # check index
-        if index >= self.nos:
-            print("Error: Invalid indeces in Neighbor Renderer")
-            return
-
-        # turn single index into 3D indeces i,j,k
-        i = index % self.nx
-        j = ((index - i) // self.nx) % self.ny
-        k = (((index - i) // self.nx) - j) // self.ny
-
-        # create a new direction array that represents the neighbor spheres
-        directions = [[0, 0, 0] for x in range(self.nos)]
-
-        # set the sphere for the spin tha we are looking at
-        index = k*self.nx*self.ny + j*self.nx + i
-        directions[index] = cyan_sph
-
-        # set the neighbors
-        x_plus = index + 1
-        if x_plus < self.nos and x_plus >= 0 and not i == (self.nx-1):
-            directions[x_plus] = pink_sph
-
-        x_minus = index - 1
-        if x_minus < self.nos and x_minus >= 0 and not i == 0:
-            directions[x_minus] = pink_sph
-
-        y_plus = index + self.nx
-        if y_plus < self.nos and y_plus >= 0 and not j == (self.ny-1):
-            directions[y_plus] = pink_sph
-
-        y_minus = index - self.nx
-        if y_minus < self.nos and y_minus >= 0 and not j == 0:
-            directions[y_minus] = pink_sph
-
-        z_plus = index + self.nx * self.ny
-        if z_plus < self.nos and z_plus >= 0 and not k == (self.nz-1):
-            directions[z_plus] = pink_sph
-
-        z_minus = index - self.nx * self.ny
-        if z_minus < self.nos and z_minus >= 0 and not k == 0:
-            directions[z_minus] = pink_sph
-
-        # scale and add the sphere renderer
-        directions = np.array(directions)*scale
-        self.neighbors_vf = vfr.VectorField(self.geometry, directions)
-        self.renderer_neighbors = vfr.SphereRenderer(
-            self.view, self.neighbors_vf)
-
-        self._setupRenderers()
-
-    def switchCoordinateSystemRenderer(self):
-        self.position_coordinate_system = [
-            0.9, 0, 0.1, 0.1]  # turn it into dynamic
-        self.renderer_cs = vfr.CoordinateSystemRenderer(self.view)
-        self.renderer_cs.setAxisLength([1, 1, 1])
-        self.renderer_cs.setNormalize(True)
-
-        self.show_coordinate_system = not self.show_coordinate_system
-        self._setupRenderers()
-
-    def switchDotRenderer(self, index):
-        self.renderer_dots = vfr.DotRenderer(self.view, self.vf)
-        self.show_dots = not self.show_dots
-        self.renderer_dots.setDotStyle(index) 
-        self._setupRenderers()
-
-    def switchStreamtubeRenderer(self):
-        if not self.show_streamtube:
-            self.renderer_streamtube = vfr.StreamTubeRenderer(self.view, 
-                                            self.vf)
-            positions = self.streamtubeBase()
-            self.renderer_streamtube.seedPositions(positions)
-        else:
-            self.renderer_streamtube.seedPositions([])
-        self.show_streamtube = not self.show_streamtube
-        self._setupRenderers()
-
-    def streamtubeCircularSeeds(self):
-        midx = (self.system_dimensions[0] - 1) / 2
-        midy = (self.system_dimensions[1] - 1) / 2
-        num_positions = 8                               # set
-        radius = 2                                      # set
-        positions = np.zeros(0)
-        for i in range(num_positions):
-            angle = ( 2 * np.pi * i / num_positions )
-            positions = np.append(positions, np.array([midx + radius * np.sin(angle),
-                                                       midy + radius * np.cos(angle), 
-                                                       self.system_dimensions[2] / 2]))
-        return positions.reshape(num_positions,3)
-
-    def streamtubeGridSeeds(self):
-        midx = (self.system_dimensions[0] - 1) / 2
-        midy = (self.system_dimensions[1] - 1) / 2
-        z = self.system_dimensions[2] / 2
-        xside, yside = (4, 4)                            # set
-        xstep, ystep = (1, 1) # increase by 2 for even side points or by 1 for odd
-        nos = xside * yside
-        gxx, gyy = np.mgrid[ midx - xstep * (xside - 1) / 2 : 
-                             midx + xstep * (xside - 1) / 2 : xside * 1j,
-                             midy - ystep * (yside - 1) / 2 : 
-                             midy + ystep * (yside - 1) / 2 : yside * 1j ]
-        gxx = gxx.reshape(1, nos)
-        gyy = gyy.reshape(1, nos)
-        gzz = np.full((1, nos), z)
-        return np.dstack((gxx, gyy, gzz))[0]
-
-    def getStreamtubeDetails(self):
-        temp = vfr.StreamTubeRenderer(self.view, self.vf)
-        return temp.getRadius(), temp.getLevelOfDetail(),\
-               temp.getStep(), temp.getSmoothingSteps() 
-
-    def setDotRadius(self,size):
-        if self.show_dots:
-            self.renderer_dots.setDotRadius(size)
-            self._setupRenderers()
-    
-    def getDotStyles(self):
-        return [e for e in vfr.DotRendererStyle.__members__]
-
-    def setDotStyle(self, index):
-        if self.show_dots: 
-            self.renderer_dots.setDotStyle(index) 
-
-    def setStreamTubeBaseStyle(self, style):
-        if style == 0:
-            self.streamtubeBase = self.streamtubeCircularSeeds
-        elif style == 1:
-            self.streamtubeBase = self.streamtubeGridSeeds 
-        # if show_streamtube is True switch off and on the renderer to redraw
-        if self.show_streamtube:
-            self.switchStreamtubeRenderer()
-            self.switchStreamtubeRenderer()
-
-    def setStreamtubeRadius(self, radius):
-        if self.show_streamtube:
-            self.renderer_streamtube.setRadius(radius)
-
-    def setStreamtubeResolution(self, resolution):
-        if self.show_streamtube:
-            self.renderer_streamtube.setLevelOfDetail(resolution)
-
-    def setStreamtubeSmoothing(self, smoothing_steps):
-        if self.show_streamtube:
-            self.renderer_streamtube.setSmoothingSteps(smoothing_steps)
-
-    def setStreamtubeStep(self, interpolation_step):
-        if self.show_streamtube:
-            self.renderer_streamtube.setStep(interpolation_step)
-
-    def switchArrowsRenderer(self):
-        self.renderer_arrows = vfr.ArrowRenderer(self.view, self.vf)
-        self.show_arrows = not self.show_arrows
-        self._setupRenderers()
-
-    def switchBoundingBoxRenderer(self):
-        self.renderer_bounding_box = vfr.BoundingBoxRenderer.forCuboid(self.view, 
-                (self.geometry.min() + self.geometry.max())*0.5, 
-                [self.nx, self.ny, self.nz], [0, 0, 0], 1)
-        self.show_bounding_box = not self.show_bounding_box
-        self._setupRenderers()
-    
-    def switchCubesRenderer(self):
-        self.renderer_cubes = vfr.ParallelepipedRenderer(self.view, self.vf)
-        # self.renderer_cubes.setParallelepipedRotation(False)
-        self.show_cubes = not self.show_cubes
-        self._setupRenderers()
-
-    def setCubesSize(self,scale):
-        if self.show_cubes:
-            self.renderer_cubes.setParallelepipedLengthA(scale)
-            self.renderer_cubes.setParallelepipedLengthB(scale)
-            self.renderer_cubes.setParallelepipedLengthC(scale)
-            self._setupRenderers()
-    
-    def _setupRenderers(self):
+    def updateRenderers(self):
         self.renderers_list = []
-        if self.show_arrows:
-            self.renderers_list.append(self.renderer_arrows)
-        if self.show_dots:
-            self.renderers_list.append(self.renderer_dots)
-        if self.show_neighbors:
-            self.renderers_list.append(self.renderer_neighbors)
-        if self.show_bounding_box:
-            self.renderers_list.append(self.renderer_bounding_box)
-        if self.show_cubes:
-            self.renderers_list.append(self.renderer_cubes)
-        if self.show_streamtube:
-            self.renderers_list.append(self.renderer_streamtube)
+        if self.arrows.show:
+            self.renderers_list.append(self.arrows.renderer)
+        if self.dots.show:
+            self.renderers_list.append(self.dots.renderer)
+        if self.neighbors.show:
+            self.renderers_list.append(self.neighbors.renderer)
+        if self.bounding_box.show:
+            self.renderers_list.append(self.bounding_box.renderer)
+        if self.cubes.show:
+            self.renderers_list.append(self.cubes.renderer)
+        if self.streamtubes.show:
+            self.renderers_list.append(self.streamtubes.renderer)
         # combine renderers
         renderers_system = vfr.CombinedRenderer(
             self.view, self.renderers_list)
         renderers = [(renderers_system, [0.0, 0.0, 1.0, 1.0])]
         # last add the coordinate system renderer
-        if self.show_coordinate_system:
-            renderers.append(
-                (self.renderer_cs, self.position_coordinate_system))
+        if self.coordinate.show:
+            renderers.append((self.coordinate.renderer, self.coordinate.position))
         # show renderers
         self.view.renderers(renderers, False)
 

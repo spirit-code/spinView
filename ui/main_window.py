@@ -8,8 +8,8 @@ from nanogui import Color, Screen, Window, GroupLayout, BoxLayout, \
     GLShader, GLCanvas, glfw, entypo
 
 from ui.gl_canvas import GLWidget
-from ui.floating.foo import FooWindow
-from ui.floating.renderers import RenderersWindow
+from ui.windows.foo import FooWindow
+from ui.windows.renderers import RenderersWindow
 
 
 class MainWindow(Screen):
