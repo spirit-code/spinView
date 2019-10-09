@@ -1,4 +1,3 @@
-
 from nanogui import Color, Screen, Window, GroupLayout, BoxLayout, \
     ToolButton, Label, Button, Widget, \
     PopupButton, CheckBox, MessageDialog, VScrollPanel, \
@@ -13,7 +12,7 @@ from ui.windows.renderers import RenderersWindow
 
 
 class MainWindow(Screen):
-    
+
     def __init__(self, height, width):
         super(MainWindow, self).__init__((height, width), "SpinView 0.0")
 
@@ -70,4 +69,3 @@ class MainWindow(Screen):
         self.gl_canvas.view.setFramebufferSize(
             size[0]*self.pixelRatio(), size[1]*self.pixelRatio())
         return True
-

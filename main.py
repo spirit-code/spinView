@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 
-import sys
-
-# Make sure to find pyVFRendering
+# Make sure to find pyVFRendering, nanogui and ovf if manually built
 # This is only needed if you did not install the package
 #
+# import sys
 # import os
-# pyVFRenderingDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "../vfrendering_iff/build"))
+# pyVFRenderingDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "VFRendering/build/Release"))
 # sys.path.insert(0, pyVFRenderingDir)
+# nanoguiDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "nanogui/build/Release/python"))
+# sys.path.insert(0, nanoguiDir)
+# nanoguiDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), "ovf/python"))
+# sys.path.insert(0, nanoguiDir)
 
 import nanogui
 import gc

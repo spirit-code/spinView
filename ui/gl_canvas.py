@@ -5,8 +5,7 @@ from nanogui import gl, glfw, GLCanvas
 
 from renderers.general import CoordinateSystemRenderer, BoundingBoxRenderer, \
      NeighborsRenderer
-from renderers.vectorfield import ArrowsRenderer, CubesRenderer, DotsRenderer, \
-    StreamTubeRenderer
+from renderers.vectorfield import ArrowsRenderer, CubesRenderer, DotsRenderer
 
 
 class GLWidget(GLCanvas):
@@ -34,19 +33,19 @@ class GLWidget(GLCanvas):
                 # for ix in range(n_cells[0]):
                     # directions.append([0, 0, 0.5])
         # self.directions = np.array(directions)
-        
+
         testfile = "img_out.ovf"
-        
+
         with ovf.ovf_file(testfile) as ovf_file:
             print("found:      ", ovf_file.found)
             print("is_ovf:     ", ovf_file.is_ovf)
             print("n_segments: ", ovf_file.n_segments)
             segment = ovf.ovf_segment()
             success = ovf_file.read_segment_header(0, segment)
-            
-            self.system_dimensions = (segment.n_cells[0], segment.n_cells[1], 
+
+            self.system_dimensions = (segment.n_cells[0], segment.n_cells[1],
                 segment.n_cells[2], 3)
-            
+
             self.nx = segment.n_cells[0]
             self.ny = segment.n_cells[1]
             self.nz = segment.n_cells[2]
@@ -55,12 +54,12 @@ class GLWidget(GLCanvas):
             n_cells = self.system_dimensions
             self.geometry = vfr.Geometry.rectilinearGeometry(
                 range(n_cells[0]), range(n_cells[1]), range(n_cells[2]))
-            
+
             print("data shape: ", self.system_dimensions)
             self.directions = np.zeros(self.system_dimensions, dtype='f')
             success = ovf_file.read_segment_data(0, segment, self.directions)
         print("----- ovf test reading done")
-       
+
         # Create the VFR.view
         self.view = vfr.View()
         self.view.setFramebufferSize(
@@ -68,21 +67,21 @@ class GLWidget(GLCanvas):
             parent.size()[1]*parent.pixelRatio())
 
         # Create/Init VFR.vf
-        self.vf = vfr.VectorField(self.geometry, 
+        self.vf = vfr.VectorField(self.geometry,
             self.directions.reshape((self.nos, 3)))
 
         # Renderers
-        self.arrows = ArrowsRenderer(self.view, self.vf) 
-        self.dots = DotsRenderer(self.view, self.vf) 
-        self.neighbors = NeighborsRenderer(self.view, self.geometry, self.system_dimensions) 
+        self.arrows = ArrowsRenderer(self.view, self.vf)
+        self.dots = DotsRenderer(self.view, self.vf)
+        self.neighbors = NeighborsRenderer(self.view, self.geometry, self.system_dimensions)
         self.coordinate = CoordinateSystemRenderer(self.view)
-        self.cubes = CubesRenderer(self.view, self.vf) 
-        self.bounding_box = BoundingBoxRenderer(self.view, self.geometry, self.system_dimensions) 
-        self.streamtubes = StreamTubeRenderer(self.view, self.vf, self.system_dimensions)
+        self.cubes = CubesRenderer(self.view, self.vf)
+        self.bounding_box = BoundingBoxRenderer(self.view, self.geometry, self.system_dimensions)
+        # self.streamtubes = StreamTubeRenderer(self.view, self.vf, self.system_dimensions)
 
         # Switch on initial renderers
-        self.arrows.switch() 
-        self.coordinate.switch() 
+        self.arrows.switch()
+        self.coordinate.switch()
         self.bounding_box.switch()
 
         self.updateRenderers()
@@ -94,9 +93,9 @@ class GLWidget(GLCanvas):
             vfr.getColormapImplementation(vfr.Colormap.hsv))
         self.options.setSystemCenter(
             (self.geometry.min() + self.geometry.max())*0.5)
-        self.options.setCameraPosition([-30, 0, 0])
-        self.options.setCenterPosition(self.options.getSystemCenter())
-        self.options.setUpVector([0, 0, 1])
+        self.options.setCameraPosition([0, 0, 30])
+        self.options.setCenterPosition((self.geometry.min() + self.geometry.max())*0.5)
+        self.options.setUpVector([0, 1, 0])
         self.view.updateOptions(self.options)
 
         # For mouse movement events
@@ -114,8 +113,8 @@ class GLWidget(GLCanvas):
             self.renderers_list.append(self.bounding_box.renderer)
         if self.cubes.show:
             self.renderers_list.append(self.cubes.renderer)
-        if self.streamtubes.show:
-            self.renderers_list.append(self.streamtubes.renderer)
+        # if self.streamtubes.show:
+        #     self.renderers_list.append(self.streamtubes.renderer)
         # combine renderers
         renderers_system = vfr.CombinedRenderer(
             self.view, self.renderers_list)
@@ -138,16 +137,16 @@ class GLWidget(GLCanvas):
 
     def mouseDragEvent(self, p, rel, button, modifiers):
         scale = 1
-        if button == glfw.MOUSE_BUTTON_2:
-            # Right button
-            camera_mode = vfr.CameraMovementModes.translate
+        if button-1 == glfw.MOUSE_BUTTON_LEFT:
+            # Left button
+            camera_mode = vfr.CameraMovementModes.rotate_bounded
             current_mouse_position = p
             self.view.mouseMove(self.previous_mouse_position, p, camera_mode)
             self.previous_mouse_position = current_mouse_position
             return True
-        elif button == glfw.MOUSE_BUTTON_3:
-            # Left button
-            camera_mode = vfr.CameraMovementModes.rotate_bounded
+        elif button-1 == glfw.MOUSE_BUTTON_RIGHT:
+            # Right button
+            camera_mode = vfr.CameraMovementModes.translate
             current_mouse_position = p
             self.view.mouseMove(self.previous_mouse_position, p, camera_mode)
             self.previous_mouse_position = current_mouse_position
@@ -157,4 +156,3 @@ class GLWidget(GLCanvas):
     def mouseButtonEvent(self, p, button, down, modifiers):
         self.previous_mouse_position = p
         return True
-
